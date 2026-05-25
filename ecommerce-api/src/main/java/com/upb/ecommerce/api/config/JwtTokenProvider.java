@@ -1,6 +1,7 @@
 package com.upb.ecommerce.api.config;
 
 import com.upb.ecommerce.api.exception.InvalidJwtAuthenticationException;
+import com.upb.ecommerce.core.dto.response.LoginResponse;
 import com.upb.ecommerce.core.service.UsuarioService;
 import com.upb.ecommerce.domain.entities.Usuario;
 import io.jsonwebtoken.*;

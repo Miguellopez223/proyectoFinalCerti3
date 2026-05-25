@@ -21,10 +21,6 @@
 		<module>ecommerce-data</module>
 		<module>ecommerce-core</module>
 		<module>ecommerce-api</module>
-		<module>ecommerce-domain</module>
-		<module>ecommerce-data</module>
-		<module>ecommerce-core</module>
-		<module>ecommerce-api</module>
 	</modules>
 
 	<properties>

@@ -1,6 +1,8 @@
 package com.upb.ecommerce.api.controller;
 
 import com.upb.ecommerce.api.config.JwtTokenProvider;
+import com.upb.ecommerce.core.dto.request.LoginRequest;
+import com.upb.ecommerce.core.dto.response.LoginResponse;
 import com.upb.ecommerce.core.service.UsuarioService;
 import com.upb.ecommerce.domain.entities.Usuario;
 import jakarta.validation.Valid;
