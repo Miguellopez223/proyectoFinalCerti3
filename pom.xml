@@ -17,6 +17,7 @@
 	<name>ecommerce-parent</name>
 
 	<modules>
+		<module>examen-api</module>
 		<module>ecommerce-domain</module>
 		<module>ecommerce-data</module>
 		<module>ecommerce-core</module>
@@ -33,6 +34,11 @@
 	<!-- Versiones centralizadas de los módulos internos -->
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>com.upb</groupId>
+				<artifactId>examen-api</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>com.upb</groupId>
 				<artifactId>ecommerce-domain</artifactId>
