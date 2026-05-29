@@ -12,31 +12,30 @@
 
     <artifactId>ecommerce-core</artifactId>
     <name>ecommerce-core</name>
-    <description>Lógica de negocio: servicios y DTOs (request / response)</description>
+    <description>Logica de negocio: servicios y DTOs (request / response)</description>
 
     <dependencies>
-        <!-- Repositorios y entidades -->
         <dependency>
             <groupId>com.upb</groupId>
             <artifactId>ecommerce-data</artifactId>
         </dependency>
-        <!-- Bean Validation para las anotaciones en los DTOs de request -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- Spring Security Core (provided — resuelto por ecommerce-api en runtime) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Jackson Annotations para @JsonProperty en DTOs -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

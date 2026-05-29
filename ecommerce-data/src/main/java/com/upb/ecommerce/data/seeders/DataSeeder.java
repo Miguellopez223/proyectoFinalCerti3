@@ -11,6 +11,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Slf4j
 @Component
 @AllArgsConstructor
@@ -51,5 +53,46 @@ public class DataSeeder implements CommandLineRunner {
             usuarioRepository.save(admin);
             log.info("Usuario admin creado: {} | password: Admin123**", admin.getEmail());
         }
+
+        migrateLegacyPasswords();
+    }
+
+    private void migrateLegacyPasswords() {
+        List<Usuario> usuarios = usuarioRepository.findAll().stream()
+                .filter(usuario -> hasLegacyPasswordFormat(usuario.getPassword()))
+                .toList();
+
+        if (usuarios.isEmpty()) {
+            return;
+        }
+
+        usuarios.forEach(usuario -> {
+            String currentPassword = usuario.getPassword();
+            if (isSeededAdminWithLegacyPassword(usuario, currentPassword)) {
+                usuario.setPassword(passwordEncoder.encode("Admin123**"));
+            } else if (isRawBcryptHash(currentPassword)) {
+                usuario.setPassword("{bcrypt}" + currentPassword);
+            } else {
+                usuario.setPassword("{noop}" + currentPassword);
+            }
+        });
+
+        usuarioRepository.saveAll(usuarios);
+        log.info("Se migraron {} contraseñas heredadas al formato compatible con Spring Security", usuarios.size());
+    }
+
+    private boolean hasLegacyPasswordFormat(String password) {
+        return password != null && !password.startsWith("{");
+    }
+
+    private boolean isRawBcryptHash(String password) {
+        return password.startsWith("$2a$")
+                || password.startsWith("$2b$")
+                || password.startsWith("$2y$");
+    }
+
+    private boolean isSeededAdminWithLegacyPassword(Usuario usuario, String password) {
+        return "admin@comercio1.com".equalsIgnoreCase(usuario.getEmail())
+                && "123456".equals(password);
     }
 }

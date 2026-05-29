@@ -62,14 +62,14 @@ public class JwtTokenProvider implements Serializable {
                 .accessToken(token)
                 .idToken(token)          // mismo token para id (no usamos OpenID separado)
                 .refreshToken(token)     // refresh aún no implementado — placeholder
-                .tokenType("bearer")
+                .tokenType("Bearer")
                 .expiresIn((long) validityInMinutes * 60 * 1000)
                 .expiresAt(expiration.getTime())
                 .build();
     }
 
     public String resolveToken(String bearerToken) {
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+        if (bearerToken != null && bearerToken.regionMatches(true, 0, "Bearer ", 0, 7)) {
             return bearerToken.substring(7);
         }
         return null;
