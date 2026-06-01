@@ -5,9 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     List<Pago> findByPedidoId(Long pedidoId);
+
+    Optional<Pago> findFirstByPedidoIdAndMetodoOrderByIdDesc(Long pedidoId, String metodo);
+
+    Optional<Pago> findByTransaccionPasarelaId(String transaccionPasarelaId);
 }
