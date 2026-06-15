@@ -1,5 +1,7 @@
 package com.upb.ecommerce.core.service;
 
+import com.upb.ecommerce.core.exception.OperationException;
+
 import com.upb.ecommerce.core.dto.request.AgregarItemCarritoRequest;
 import com.upb.ecommerce.core.dto.response.CarritoResponse;
 import com.upb.ecommerce.data.repository.*;
@@ -35,21 +37,21 @@ public class CarritoService {
     public CarritoResponse obtenerCarritoActivo(Long tiendaId, Long usuarioId) {
         Carrito carrito = carritoRepository
                 .findByUsuarioIdAndTiendaIdAndEstado(usuarioId, tiendaId, "ACTIVO")
-                .orElseThrow(() -> new RuntimeException("No hay carrito activo para este usuario"));
+                .orElseThrow(() -> new OperationException("No hay carrito activo para este usuario"));
         return CarritoResponse.fromEntity(carrito);
     }
 
     @Transactional
     public CarritoResponse agregarItem(AgregarItemCarritoRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
+                .orElseThrow(() -> new OperationException("Tienda no encontrada"));
         Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new OperationException("Usuario no encontrado"));
         Producto producto = productoRepository.findByIdAndTiendaId(request.getProductoId(), request.getTiendaId())
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado en esta tienda"));
+                .orElseThrow(() -> new OperationException("Producto no encontrado en esta tienda"));
 
         if (producto.getStock() < request.getCantidad()) {
-            throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock());
+            throw new OperationException("Stock insuficiente. Disponible: " + producto.getStock());
         }
 
         Carrito carrito = carritoRepository
@@ -85,7 +87,7 @@ public class CarritoService {
     @Transactional
     public CarritoResponse eliminarItem(Long carritoId, Long detalleId) {
         DetalleCarrito detalle = detalleCarritoRepository.findById(detalleId)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado en el carrito"));
+                .orElseThrow(() -> new OperationException("Item no encontrado en el carrito"));
         Long cid = detalle.getCarrito().getId();
         detalleCarritoRepository.delete(detalle);
         recalcularTotal(cid);

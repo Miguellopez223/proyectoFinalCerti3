@@ -34,6 +34,7 @@ public class SecurityConfig implements Serializable {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(corsFilter, SessionManagementFilter.class)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request -> request.getRequestURI().contains("v2")).denyAll()
                         // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -45,6 +46,7 @@ public class SecurityConfig implements Serializable {
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tiendas").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/tiendas").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/stereum/outbound").permitAll()
                         .requestMatchers("/error").anonymous()
                         // Todo lo demás requiere JWT
                         .anyRequest().authenticated()

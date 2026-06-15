@@ -1,11 +1,15 @@
 package com.upb.ecommerce.core.service;
 
+import com.upb.ecommerce.core.exception.OperationException;
+
 import com.upb.ecommerce.core.dto.request.CategoriaRequest;
 import com.upb.ecommerce.core.dto.response.CategoriaResponse;
 import com.upb.ecommerce.data.repository.CategoriaRepository;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.domain.entities.Categoria;
 import com.upb.ecommerce.domain.entities.Tienda;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +31,15 @@ public class CategoriaService {
                 .stream().map(CategoriaResponse::fromEntity).toList();
     }
 
+    public Page<CategoriaResponse> listarPorTiendaPaginado(Long tiendaId, Pageable pageable) {
+        return categoriaRepository.findByTiendaIdAndEstadoTrue(tiendaId, pageable)
+                .map(CategoriaResponse::fromEntity);
+    }
+
     @Transactional
     public CategoriaResponse crear(CategoriaRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
+                .orElseThrow(() -> new OperationException("Tienda no encontrada"));
         Categoria categoria = new Categoria();
         categoria.setTienda(tienda);
         categoria.setNombre(request.getNombre());
@@ -40,7 +49,7 @@ public class CategoriaService {
     @Transactional
     public CategoriaResponse actualizar(Long id, CategoriaRequest request) {
         Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new OperationException("Categoría no encontrada"));
         categoria.setNombre(request.getNombre());
         return CategoriaResponse.fromEntity(categoriaRepository.save(categoria));
     }
@@ -48,7 +57,7 @@ public class CategoriaService {
     @Transactional
     public void eliminar(Long id) {
         Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
+                .orElseThrow(() -> new OperationException("Categoría no encontrada"));
         categoria.setEstado(false);
         categoriaRepository.save(categoria);
     }

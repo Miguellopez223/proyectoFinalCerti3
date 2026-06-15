@@ -30,7 +30,7 @@ public class JwtTokenProvider implements Serializable {
     private String secretKey;
     private byte[] secretKeyBytes;
 
-    @Value("${security.jwt.token.expire-length:480}")
+    @Value("${security.jwt.token.expire-length:2}")
     private int validityInMinutes;
 
     @Autowired

@@ -3,6 +3,7 @@ package com.upb.ecommerce.core.integracion;
 import com.upb.ecommerce.core.dto.request.LoginRequest;
 import com.upb.ecommerce.core.dto.response.LoginResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,15 +32,20 @@ public class AuthClient {
         String endpoint = urlBase + "/api/auth";
         log.info("AuthClient consumiendo POST {}", endpoint);
 
-        ResponseEntity<LoginResponse> response;
+        JSONObject jsonRequest = new JSONObject();
+        jsonRequest.put("tienda_id", request.getTiendaId());
+        jsonRequest.put("email", request.getEmail());
+        jsonRequest.put("password", request.getPassword());
+
+        ResponseEntity<String> response;
         try {
             response = create().post()
                     .uri(endpoint)
                     .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                     .header("Accept", MediaType.APPLICATION_JSON_VALUE)
-                    .body(request)
+                    .body(jsonRequest.toString())
                     .retrieve()
-                    .toEntity(LoginResponse.class);
+                    .toEntity(String.class);
         } catch (Exception e) {
             log.error("Error consumiendo auth", e);
             throw e;
@@ -50,7 +56,21 @@ public class AuthClient {
         }
 
         log.info("AuthClient respuesta {}", response.getStatusCode().value());
-        return response.getBody();
+
+        String responseBody = response.getBody();
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new Exception("La respuesta del servicio auth llego vacia");
+        }
+
+        JSONObject jsonResponse = new JSONObject(responseBody);
+        return LoginResponse.builder()
+                .accessToken(jsonResponse.optString("access_token", null))
+                .idToken(jsonResponse.optString("id_token", null))
+                .refreshToken(jsonResponse.optString("refresh_token", null))
+                .tokenType(jsonResponse.optString("token_type", null))
+                .expiresIn(jsonResponse.optLong("expires_in", 0L))
+                .expiresAt(jsonResponse.optLong("expires_at", 0L))
+                .build();
     }
 
     private RestClient create() {

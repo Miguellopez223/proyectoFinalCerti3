@@ -3,7 +3,12 @@ package com.upb.ecommerce.core.integracion;
 import com.upb.ecommerce.core.dto.request.GenerarQrPagoRequest;
 import com.upb.ecommerce.core.dto.response.GenerarQrPagoResponse;
 import com.upb.ecommerce.core.dto.response.VerificarQrPagoResponse;
+import com.upb.ecommerce.core.exception.OperationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
@@ -14,8 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +31,8 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class StereumQrClient {
+
+    private static final long WEBHOOK_WINDOW_SECONDS = 300L;
 
     @Value("${stereum.url-base:https://api.stereum.tech}")
     private String urlBase;
@@ -128,6 +138,35 @@ public class StereumQrClient {
             log.error("Error verificando cargo QR", e);
             throw e;
         }
+    }
+
+    public void validarWebhook(String signature, long tiempo, String body) {
+        if (StringUtils.isBlank(signature)) {
+            throw new OperationException("La cabecera X-Signature es requerida");
+        }
+        if (StringUtils.isBlank(body)) {
+            throw new OperationException("El body del webhook es requerido");
+        }
+        if (StringUtils.isBlank(apiKey)) {
+            throw new OperationException("La propiedad stereum.api-key es requerida para validar el webhook");
+        }
+
+        long now = Instant.now().getEpochSecond();
+        if (Math.abs(now - tiempo) > WEBHOOK_WINDOW_SECONDS) {
+            throw new OperationException("La notificacion excede la ventana permitida de 5 minutos");
+        }
+
+        String hmac = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, apiKey.getBytes(StandardCharsets.UTF_8))
+                .hmacHex(body.getBytes(StandardCharsets.UTF_8));
+
+        if (!MessageDigest.isEqual(
+                hmac.getBytes(StandardCharsets.UTF_8),
+                signature.trim().getBytes(StandardCharsets.UTF_8))) {
+            throw new OperationException("SIGN_REQUEST_INVALID");
+        }
+
+        new JSONObject(body);
+        log.info("Webhook Stereum validado correctamente");
     }
 
     private Map<String, Object> buildChargeBody(GenerarQrPagoRequest request, BigDecimal monto) {

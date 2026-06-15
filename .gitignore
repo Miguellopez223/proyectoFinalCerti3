@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Deployment artifacts ###
+deployment/produccion/*.jar
+deployment/produccion/.env

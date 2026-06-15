@@ -4,6 +4,9 @@ import com.upb.ecommerce.core.dto.request.CrearPedidoRequest;
 import com.upb.ecommerce.core.dto.response.PedidoResponse;
 import com.upb.ecommerce.core.service.PedidoService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +27,20 @@ public class PedidoController {
     public ResponseEntity<List<PedidoResponse>> listarPorUsuario(@PathVariable Long tiendaId,
                                                                   @PathVariable Long usuarioId) {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(tiendaId, usuarioId));
+    }
+
+    @GetMapping("/tienda/{tiendaId}/usuario/{usuarioId}/paginado")
+    public ResponseEntity<Page<PedidoResponse>> listarPorUsuarioPaginado(
+            @PathVariable Long tiendaId,
+            @PathVariable Long usuarioId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") Sort.Direction sortDir) {
+        return ResponseEntity.ok(pedidoService.listarPorUsuarioPaginado(
+                tiendaId,
+                usuarioId,
+                PageRequest.of(page, size, Sort.by(sortDir, sortBy))));
     }
 
     @GetMapping("/tienda/{tiendaId}/{pedidoId}")

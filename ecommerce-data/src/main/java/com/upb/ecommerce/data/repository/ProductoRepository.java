@@ -1,6 +1,8 @@
 package com.upb.ecommerce.data.repository;
 
 import com.upb.ecommerce.domain.entities.Producto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +14,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     List<Producto> findByTiendaIdAndEstadoTrue(Long tiendaId);
 
+    Page<Producto> findByTiendaIdAndEstadoTrue(Long tiendaId, Pageable pageable);
+
     List<Producto> findByTiendaIdAndCategoriaIdAndEstadoTrue(Long tiendaId, Long categoriaId);
+
+    Page<Producto> findByTiendaIdAndCategoriaIdAndEstadoTrue(Long tiendaId, Long categoriaId, Pageable pageable);
 
     Optional<Producto> findByIdAndTiendaId(Long id, Long tiendaId);
 

@@ -1,9 +1,13 @@
 package com.upb.ecommerce.core.service;
 
+import com.upb.ecommerce.core.exception.OperationException;
+
 import com.upb.ecommerce.core.dto.request.CrearPedidoRequest;
 import com.upb.ecommerce.core.dto.response.PedidoResponse;
 import com.upb.ecommerce.data.repository.*;
 import com.upb.ecommerce.domain.entities.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,24 +48,29 @@ public class PedidoService {
                 .stream().map(PedidoResponse::fromEntity).toList();
     }
 
+    public Page<PedidoResponse> listarPorUsuarioPaginado(Long tiendaId, Long usuarioId, Pageable pageable) {
+        return pedidoRepository.findByUsuarioIdAndTiendaId(usuarioId, tiendaId, pageable)
+                .map(PedidoResponse::fromEntity);
+    }
+
     public PedidoResponse obtenerPorId(Long tiendaId, Long pedidoId) {
         return PedidoResponse.fromEntity(
                 pedidoRepository.findByIdAndTiendaId(pedidoId, tiendaId)
-                        .orElseThrow(() -> new RuntimeException("Pedido no encontrado")));
+                        .orElseThrow(() -> new OperationException("Pedido no encontrado")));
     }
 
     @Transactional
     public PedidoResponse crearDesdeCarrito(CrearPedidoRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new RuntimeException("Tienda no encontrada"));
+                .orElseThrow(() -> new OperationException("Tienda no encontrada"));
         Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new OperationException("Usuario no encontrado"));
         Carrito carrito = carritoRepository
                 .findByUsuarioIdAndTiendaIdAndEstado(request.getUsuarioId(), request.getTiendaId(), "ACTIVO")
-                .orElseThrow(() -> new RuntimeException("No hay carrito activo para este usuario"));
+                .orElseThrow(() -> new OperationException("No hay carrito activo para este usuario"));
 
         if (carrito.getDetalles() == null || carrito.getDetalles().isEmpty()) {
-            throw new RuntimeException("El carrito está vacío");
+            throw new OperationException("El carrito está vacío");
         }
 
         Pedido pedido = new Pedido();
@@ -72,7 +81,7 @@ public class PedidoService {
 
         if (request.getDireccionId() != null) {
             DireccionEnvio direccion = direccionRepository.findById(request.getDireccionId())
-                    .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
+                    .orElseThrow(() -> new OperationException("Dirección no encontrada"));
             pedido.setDireccionEnvio(direccion);
         }
 
@@ -80,7 +89,7 @@ public class PedidoService {
         for (DetalleCarrito dc : carrito.getDetalles()) {
             Producto producto = dc.getProducto();
             if (producto.getStock() < dc.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
+                throw new OperationException("Stock insuficiente para: " + producto.getNombre());
             }
 
             producto.setStock(producto.getStock() - dc.getCantidad());
@@ -117,11 +126,11 @@ public class PedidoService {
     @Transactional
     public PedidoResponse actualizarEstado(Long tiendaId, Long pedidoId, String nuevoEstado) {
         Pedido pedido = pedidoRepository.findByIdAndTiendaId(pedidoId, tiendaId)
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new OperationException("Pedido no encontrado"));
 
         List<String> estadosValidos = List.of("PENDIENTE", "PAGADO", "PREPARANDO", "ENVIADO", "ENTREGADO", "CANCELADO");
         if (!estadosValidos.contains(nuevoEstado)) {
-            throw new RuntimeException("Estado no válido: " + nuevoEstado);
+            throw new OperationException("Estado no válido: " + nuevoEstado);
         }
         pedido.setEstadoPedido(nuevoEstado);
         return PedidoResponse.fromEntity(pedidoRepository.save(pedido));

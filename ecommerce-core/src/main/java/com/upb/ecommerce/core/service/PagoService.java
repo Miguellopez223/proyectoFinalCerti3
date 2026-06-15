@@ -1,6 +1,9 @@
 package com.upb.ecommerce.core.service;
 
+import com.upb.ecommerce.core.exception.OperationException;
+
 import com.upb.ecommerce.core.dto.request.GenerarQrPagoRequest;
+import com.upb.ecommerce.core.dto.request.Notificacion;
 import com.upb.ecommerce.core.dto.request.PagoRequest;
 import com.upb.ecommerce.core.dto.response.GenerarQrPagoResponse;
 import com.upb.ecommerce.core.dto.response.PagoResponse;
@@ -10,6 +13,8 @@ import com.upb.ecommerce.data.repository.PagoRepository;
 import com.upb.ecommerce.data.repository.PedidoRepository;
 import com.upb.ecommerce.domain.entities.Pago;
 import com.upb.ecommerce.domain.entities.Pedido;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,14 +45,19 @@ public class PagoService {
                 .stream().map(PagoResponse::fromEntity).toList();
     }
 
+    public Page<PagoResponse> listarPorPedidoPaginado(Long pedidoId, Pageable pageable) {
+        return pagoRepository.findByPedidoId(pedidoId, pageable)
+                .map(PagoResponse::fromEntity);
+    }
+
     @Transactional
     public PagoResponse registrar(PagoRequest request) {
         Pedido pedido = pedidoRepository.findById(request.getPedidoId())
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new OperationException("Pedido no encontrado"));
         validarPedidoPagable(pedido);
 
         if (request.getMonto().compareTo(pedido.getTotal()) != 0) {
-            throw new RuntimeException("El monto (" + request.getMonto()
+            throw new OperationException("El monto (" + request.getMonto()
                     + ") no coincide con el total del pedido (" + pedido.getTotal() + ")");
         }
 
@@ -66,7 +76,7 @@ public class PagoService {
 
     public GenerarQrPagoResponse generarQr(GenerarQrPagoRequest request) throws Exception {
         Pedido pedido = pedidoRepository.findById(request.getPedidoId())
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new OperationException("Pedido no encontrado"));
         validarPedidoPagable(pedido);
         validarRequestQr(request);
 
@@ -92,28 +102,31 @@ public class PagoService {
     public VerificarQrPagoResponse verificarQr(String transactionId) throws Exception {
         VerificarQrPagoResponse response = stereumQrClient.verificarQr(transactionId);
 
-        pagoRepository.findByTransaccionPasarelaId(transactionId).ifPresent(pago -> {
-            String estadoPago = normalizarEstadoPago(response.getStatus());
-            pago.setEstadoPago(estadoPago);
-            pagoRepository.save(pago);
-
-            if ("EXITOSO".equals(estadoPago)) {
-                Pedido pedido = pago.getPedido();
-                pedido.setEstadoPedido("PAGADO");
-                pedidoRepository.save(pedido);
-            }
-        });
+        pagoRepository.findByTransaccionPasarelaId(transactionId)
+                .ifPresent(pago -> actualizarEstadoPago(pago, response.getStatus()));
 
         return response;
+    }
+
+    @Transactional
+    public void procesarNotificacionStereum(Notificacion request) {
+        String transactionId = request.resolvedTransactionId();
+        if (transactionId == null || transactionId.isBlank()) {
+            throw new OperationException("La notificacion no contiene transactionId");
+        }
+
+        String transactionStatus = request.resolvedTransactionStatus();
+        pagoRepository.findByTransaccionPasarelaId(transactionId)
+                .ifPresent(pago -> actualizarEstadoPago(pago, transactionStatus));
     }
 
     private void validarPedidoPagable(Pedido pedido) {
         String estado = pedido.getEstadoPedido();
         if ("PAGADO".equalsIgnoreCase(estado)) {
-            throw new RuntimeException("El pedido ya fue pagado");
+            throw new OperationException("El pedido ya fue pagado");
         }
         if ("CANCELADO".equalsIgnoreCase(estado)) {
-            throw new RuntimeException("No se puede generar pagos para un pedido cancelado");
+            throw new OperationException("No se puede generar pagos para un pedido cancelado");
         }
     }
 
@@ -123,23 +136,23 @@ public class PagoService {
         String country = upper(request.getCountry());
 
         if (!"BO".equals(country)) {
-            throw new RuntimeException("Solo se soporta country BO para esta integracion");
+            throw new OperationException("Solo se soporta country BO para esta integracion");
         }
         if (!CURRENCIES.contains(currency)) {
-            throw new RuntimeException("Currency no soportada: " + request.getCurrency());
+            throw new OperationException("Currency no soportada: " + request.getCurrency());
         }
         if (!NETWORKS.contains(network)) {
-            throw new RuntimeException("Network no soportada: " + request.getNetwork());
+            throw new OperationException("Network no soportada: " + request.getNetwork());
         }
         if (request.getReservationValidityTime() == null || request.getReservationValidityTime() < 1
                 || request.getReservationValidityTime() > 60) {
-            throw new RuntimeException("reservationValidityTime debe estar entre 1 y 60 minutos");
+            throw new OperationException("reservationValidityTime debe estar entre 1 y 60 minutos");
         }
         if ("POLYGON".equals(network) && !Set.of("USDT", "USDC").contains(currency)) {
-            throw new RuntimeException("POLYGON solo soporta USDT o USDC");
+            throw new OperationException("POLYGON solo soporta USDT o USDC");
         }
         if ("CSL".equals(network) && !"BOB".equals(currency)) {
-            throw new RuntimeException("CSL solo soporta BOB");
+            throw new OperationException("CSL solo soporta BOB");
         }
     }
 
@@ -157,5 +170,17 @@ public class PagoService {
 
     private String upper(String value) {
         return value == null ? null : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void actualizarEstadoPago(Pago pago, String status) {
+        String estadoPago = normalizarEstadoPago(status);
+        pago.setEstadoPago(estadoPago);
+        pagoRepository.save(pago);
+
+        if ("EXITOSO".equals(estadoPago)) {
+            Pedido pedido = pago.getPedido();
+            pedido.setEstadoPedido("PAGADO");
+            pedidoRepository.save(pedido);
+        }
     }
 }
