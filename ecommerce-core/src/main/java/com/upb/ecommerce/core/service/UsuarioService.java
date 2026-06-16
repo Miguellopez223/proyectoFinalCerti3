@@ -4,10 +4,12 @@ import com.upb.ecommerce.core.dto.request.LoginRequest;
 import com.upb.ecommerce.core.dto.request.UsuarioRequest;
 import com.upb.ecommerce.core.dto.response.UsuarioResponse;
 import com.upb.ecommerce.core.exception.NotDataFoundException;
+import com.upb.ecommerce.core.exception.OperationException;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.data.repository.UsuarioRepository;
 import com.upb.ecommerce.domain.entities.Tienda;
 import com.upb.ecommerce.domain.entities.Usuario;
+import com.upb.ecommerce.domain.enums.RolType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,9 +51,35 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
 
         if (usuarioRepository.findByEmailAndTiendaId(request.getEmail(), tienda.getId()).isPresent()) {
-            throw new RuntimeException("Ya existe un usuario con ese email en esta tienda");
+            throw new OperationException("Ya existe un usuario con ese email en esta tienda");
         }
-        // La validación del rol ya no es necesaria — el enum RolType lo restringe automáticamente
+
+        Usuario usuario = new Usuario();
+        usuario.setTienda(tienda);
+        usuario.setNombre(request.getNombre());
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuario.setNumeroWhatsapp(request.getNumeroWhatsapp());
+        // Seguridad: el auto-registro es público, por lo que SIEMPRE se crea como
+        // CLIENTE (no visible en catálogo) para evitar escalada de privilegios desde el
+        // endpoint abierto.
+        usuario.setRol(RolType.CLIENTE);
+        usuario.setVisibleCatalogo(false);
+        return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
+    }
+
+    /**
+     * Alta de usuario por un ADMIN: respeta el rol enviado y permite configurar el número
+     * de WhatsApp y la visibilidad en el catálogo público.
+     */
+    @Transactional
+    public UsuarioResponse crearPorAdmin(UsuarioRequest request) {
+        Tienda tienda = tiendaRepository.findById(request.getTiendaId())
+                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+
+        if (usuarioRepository.findByEmailAndTiendaId(request.getEmail(), tienda.getId()).isPresent()) {
+            throw new OperationException("Ya existe un usuario con ese email en esta tienda");
+        }
 
         Usuario usuario = new Usuario();
         usuario.setTienda(tienda);
@@ -59,6 +87,8 @@ public class UsuarioService {
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setRol(request.getRol());
+        usuario.setNumeroWhatsapp(request.getNumeroWhatsapp());
+        usuario.setVisibleCatalogo(Boolean.TRUE.equals(request.getVisibleCatalogo()));
         return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
     }
 
@@ -69,6 +99,10 @@ public class UsuarioService {
         usuario.setNombre(request.getNombre());
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        usuario.setNumeroWhatsapp(request.getNumeroWhatsapp());
+        if (request.getVisibleCatalogo() != null) {
+            usuario.setVisibleCatalogo(request.getVisibleCatalogo());
         }
         return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
     }
@@ -88,13 +122,13 @@ public class UsuarioService {
     public Usuario validarCredenciales(LoginRequest request) {
         Usuario usuario = usuarioRepository
                 .findByEmailAndTiendaId(request.getEmail(), request.getTiendaId())
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+                .orElseThrow(() -> new OperationException("Credenciales inválidas"));
 
         if (!usuario.getEstado()) {
-            throw new RuntimeException("Usuario inactivo");
+            throw new OperationException("Usuario inactivo");
         }
         if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
-            throw new RuntimeException("Credenciales inválidas");
+            throw new OperationException("Credenciales inválidas");
         }
         return usuario;
     }
@@ -113,5 +147,13 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotDataFoundException("Usuario no encontrado"));
         usuario.setEstado(false);
         usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public UsuarioResponse reactivar(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new NotDataFoundException("Usuario no encontrado"));
+        usuario.setEstado(true);
+        return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
     }
 }

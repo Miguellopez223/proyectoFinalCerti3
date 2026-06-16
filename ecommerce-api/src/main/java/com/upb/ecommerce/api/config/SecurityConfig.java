@@ -7,6 +7,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,6 +24,7 @@ import java.io.Serializable;
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig implements Serializable {
 
     @Bean
@@ -40,13 +42,23 @@ public class SecurityConfig implements Serializable {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // Endpoints públicos — registro, login (auth) y gestión de tiendas
+                        // Frontend SPA estatico (servido desde classpath:/static)
+                        .requestMatchers(HttpMethod.GET,
+                                "/", "/index.html", "/app.js", "/styles.css", "/favicon.ico"
+                        ).permitAll()
+                        // Endpoints publicos - registro, login (auth) y gestion de tiendas
                         .requestMatchers(HttpMethod.POST, "/api/auth").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/externo").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tiendas").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/tiendas").permitAll()
+                        // Catalogo publico de una tienda por slug (sin login)
+                        .requestMatchers(HttpMethod.GET, "/api/catalogo/**").permitAll()
+                        // Webhook de Stereum: público porque Stereum no envía JWT;
+                        // se autentica con la firma HMAC validada en el controlador.
+                        .requestMatchers(HttpMethod.POST, "/api/webhooks/stereum/outbound").permitAll()
                         .requestMatchers("/error").anonymous()
-                        // Todo lo demás requiere JWT
+                        // Todo lo demas requiere JWT
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
