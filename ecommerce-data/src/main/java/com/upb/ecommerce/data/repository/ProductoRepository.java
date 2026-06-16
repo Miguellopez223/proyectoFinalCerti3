@@ -31,6 +31,6 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     /** Productos activos cuyo stock está en o por debajo del mínimo (incluye agotados). */
     @Query("SELECT p FROM Producto p WHERE p.tienda.id = :tiendaId AND p.estado = true " +
-            "AND p.stock <= p.stockMinimo ORDER BY p.stock ASC")
+           "AND p.stock <= p.stockMinimo ORDER BY p.stock ASC")
     List<Producto> findStockCritico(@Param("tiendaId") Long tiendaId);
 }
