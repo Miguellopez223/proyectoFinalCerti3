@@ -3,7 +3,6 @@ package com.upb.ecommerce.domain.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -26,6 +25,10 @@ public class Producto {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unidad_medida_id")
+    private UnidadMedida unidadMedida;
 
     @Column(nullable = false, length = 200)
     private String nombre;
