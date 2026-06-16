@@ -18,6 +18,9 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** Busca el pago por el id de transacción que devolvió Stereum al crear el cargo. */
     Optional<Pago> findByTransaccionPasarelaId(String transaccionPasarelaId);
 
+    /** Último pago de un pedido con un método dado (para reutilizar el QR pendiente). */
+    Optional<Pago> findFirstByPedidoIdAndMetodoOrderByIdDesc(Long pedidoId, String metodo);
+
     /** Pagos exitosos de la tienda en un rango (para el desglose por método de pago). */
     @Query("SELECT pg FROM Pago pg JOIN pg.pedido p WHERE p.tienda.id = :tiendaId " +
            "AND pg.estadoPago = 'EXITOSO' " +
