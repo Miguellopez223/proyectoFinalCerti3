@@ -1,11 +1,7 @@
 package com.upb.ecommerce.core.integracion;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * Datos del cliente que paga, anidados en el request de create-charge de Stereum.
