@@ -17,18 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-/**
- * Barrido programado de carritos abandonados.
- *
- * <p>Cada 8 horas busca carritos que sigan ACTIVO pero cuya última modificación sea de hace
- * más de {@code carrito.abandono.horas} (1 h por defecto): son clientes que metieron productos
- * al carrito y no completaron la compra. Los procesa por páginas (lotes) y, por cada carrito,
- * lanza un trabajador {@code @Async} que le envía un recordatorio por correo y lo marca como
- * ABANDONADO.
- *
- * <p>Es el mismo patrón del ejemplo de clase (tarea {@code @Scheduled} que recorre páginas y
- * dispara trabajos en paralelo), adaptado al dominio del ecommerce.
- */
+
 @Slf4j
 @Component
 public class CarritoAbandonadoJob {

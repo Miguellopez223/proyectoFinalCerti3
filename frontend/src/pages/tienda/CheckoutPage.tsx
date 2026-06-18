@@ -28,7 +28,6 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<Step>('direccion');
 
-  // Direcciones
   const [direcciones, setDirecciones] = useState<DireccionEnvio[]>([]);
   const [loadingDir, setLoadingDir] = useState(true);
   const [direccionId, setDireccionId] = useState<number | null>(null);
@@ -37,7 +36,6 @@ export default function CheckoutPage() {
   const [dirErrors, setDirErrors] = useState<Record<string, string>>({});
   const [savingDir, setSavingDir] = useState(false);
 
-  // Pedido + pago
   const [creating, setCreating] = useState(false);
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [documentNumber, setDocumentNumber] = useState('');
@@ -57,7 +55,6 @@ export default function CheckoutPage() {
       .finally(() => setLoadingDir(false));
   }, [user]);
 
-  // Polling del estado del pedido mientras esté pendiente.
   const timerRef = useRef<number | null>(null);
   useEffect(() => {
     if (!pedido || step !== 'pago') return;
@@ -72,7 +69,7 @@ export default function CheckoutPage() {
           if (fresh.estadoPedido === 'PAGADO') toast.success('¡Pago confirmado!');
         }
       } catch {
-        // Ignorar errores transitorios del polling.
+        // ignorar errores transitorios del polling
       }
     }, 5000);
 
@@ -123,7 +120,6 @@ export default function CheckoutPage() {
       });
       setPedido(nuevo);
       setStep('pago');
-      // El carrito se consumió al crear el pedido.
       setCart(null);
       void refresh();
     } catch (err) {
@@ -163,30 +159,33 @@ export default function CheckoutPage() {
     }
   }
 
-  // El carrito vacío solo bloquea el paso de dirección (en el paso de pago ya se consumió).
   if (step === 'direccion' && !loadingDir && items.length === 0) {
     return (
-      <EmptyState
-        title="No hay nada para pagar"
-        message="Tu carrito está vacío."
-        icon={<IconCart />}
-        action={
-          <Link to="/tienda">
-            <Button>Ir al catálogo</Button>
-          </Link>
-        }
-      />
+      <div className="pt-8">
+        <div className="rounded-3xl border border-white/10 bg-white/95 p-12 shadow-2xl shadow-black/30 backdrop-blur-sm">
+          <EmptyState
+            title="No hay nada para pagar"
+            message="Tu carrito está vacío."
+            icon={<IconCart />}
+            action={
+              <Link to="/tienda">
+                <Button>Ir al catálogo</Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-slate-900">Finalizar compra</h1>
+    <div className="pt-8">
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-white">Finalizar compra</h1>
 
-      {/* Indicador de pasos */}
+      {/* Step indicator */}
       <div className="mb-8 flex items-center gap-3">
         <StepDot n={1} label="Envío" active={step === 'direccion'} done={step === 'pago'} />
-        <span className="h-0.5 w-12 bg-slate-200" />
+        <span className="h-0.5 w-12 rounded-full bg-white/20" />
         <StepDot n={2} label="Pago" active={step === 'pago'} done={pagado} />
       </div>
 
@@ -208,7 +207,9 @@ export default function CheckoutPage() {
                       key={d.id}
                       className={cn(
                         'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
-                        direccionId === d.id ? 'border-brand-500 bg-brand-50/50' : 'border-slate-200 hover:bg-slate-50',
+                        direccionId === d.id
+                          ? 'border-brand-500 bg-brand-50/50'
+                          : 'border-slate-200 hover:bg-slate-50',
                       )}
                     >
                       <input
@@ -229,14 +230,35 @@ export default function CheckoutPage() {
                   ))}
 
                   {!showNewDir ? (
-                    <Button variant="ghost" size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setShowNewDir(true)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<IconPlus className="h-4 w-4" />}
+                      onClick={() => setShowNewDir(true)}
+                    >
                       Agregar nueva dirección
                     </Button>
                   ) : (
                     <form onSubmit={saveNewDireccion} className="space-y-3 rounded-lg border border-slate-200 p-4">
-                      <Input label="Dirección" value={newDir.direccionCalle} onChange={(e) => setNewDir((f) => ({ ...f, direccionCalle: e.target.value }))} error={dirErrors.direccionCalle} required />
-                      <Input label="Ciudad" value={newDir.ciudad} onChange={(e) => setNewDir((f) => ({ ...f, ciudad: e.target.value }))} error={dirErrors.ciudad} required />
-                      <Textarea label="Referencias" value={newDir.referencias} onChange={(e) => setNewDir((f) => ({ ...f, referencias: e.target.value }))} />
+                      <Input
+                        label="Dirección"
+                        value={newDir.direccionCalle}
+                        onChange={(e) => setNewDir((f) => ({ ...f, direccionCalle: e.target.value }))}
+                        error={dirErrors.direccionCalle}
+                        required
+                      />
+                      <Input
+                        label="Ciudad"
+                        value={newDir.ciudad}
+                        onChange={(e) => setNewDir((f) => ({ ...f, ciudad: e.target.value }))}
+                        error={dirErrors.ciudad}
+                        required
+                      />
+                      <Textarea
+                        label="Referencias"
+                        value={newDir.referencias}
+                        onChange={(e) => setNewDir((f) => ({ ...f, referencias: e.target.value }))}
+                      />
                       <div className="flex gap-2">
                         <Button type="submit" size="sm" loading={savingDir}>
                           Guardar dirección
@@ -255,7 +277,14 @@ export default function CheckoutPage() {
           </div>
 
           <OrderSummary items={items} total={cart?.totalEstimado}>
-            <Button className="w-full" size="lg" variant="cta" loading={creating} onClick={crearPedido} disabled={items.length === 0}>
+            <Button
+              className="w-full"
+              size="lg"
+              variant="cta"
+              loading={creating}
+              onClick={crearPedido}
+              disabled={items.length === 0}
+            >
               Crear pedido
             </Button>
           </OrderSummary>
@@ -272,7 +301,9 @@ export default function CheckoutPage() {
                     <IconCheck className="h-8 w-8" />
                   </span>
                   <h2 className="mt-4 text-xl font-semibold text-slate-900">¡Pago confirmado!</h2>
-                  <p className="mt-1 text-sm text-slate-500">Tu pedido #{pedido.id} fue pagado correctamente.</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Tu pedido #{pedido.id} fue pagado correctamente.
+                  </p>
                   <div className="mt-6 flex gap-3">
                     <Button onClick={() => navigate('/tienda/pedidos')}>Ver mis pedidos</Button>
                     <Button variant="secondary" onClick={() => navigate('/tienda')}>
@@ -296,7 +327,13 @@ export default function CheckoutPage() {
                         onChange={(e) => setDocumentNumber(e.target.value)}
                         placeholder="Ej. 1234567"
                       />
-                      <Button className="mt-4" variant="cta" size="lg" loading={generatingQr} onClick={generarQr}>
+                      <Button
+                        className="mt-4"
+                        variant="cta"
+                        size="lg"
+                        loading={generatingQr}
+                        onClick={generarQr}
+                      >
                         Generar QR de pago
                       </Button>
                     </div>
@@ -304,12 +341,18 @@ export default function CheckoutPage() {
                     <div className="mt-4 flex flex-col items-center">
                       <QrImage qr={qr} />
                       <p className="mt-4 text-center text-sm text-slate-500">
-                        Escanea el QR con tu app bancaria. El pago se confirma automáticamente; también puedes actualizar el estado.
+                        Escanea el QR con tu app bancaria. El pago se confirma automáticamente.
                       </p>
-                      <Button className="mt-4" variant="secondary" loading={polling} leftIcon={<IconRefresh className="h-4 w-4" />} onClick={refrescarEstado}>
+                      <Button
+                        className="mt-4"
+                        variant="secondary"
+                        loading={polling}
+                        leftIcon={<IconRefresh className="h-4 w-4" />}
+                        onClick={refrescarEstado}
+                      >
                         Ya pagué / actualizar estado
                       </Button>
-                      <p className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                      <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                         <Spinner className="h-3 w-3" /> Verificando automáticamente cada 5 s…
                       </p>
                     </div>
@@ -332,14 +375,21 @@ function QrImage({ qr }: { qr: StereumCharge }) {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-700">
         La pasarela no devolvió una imagen de QR.
         {qr.payment_link && (
-          <a href={qr.payment_link} target="_blank" rel="noreferrer" className="mt-2 block font-medium text-brand-600 underline">
+          <a
+            href={qr.payment_link}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 block font-medium text-brand-600 underline"
+          >
             Abrir enlace de pago
           </a>
         )}
       </div>
     );
   }
-  const src = qr.qr_base64.startsWith('data:') ? qr.qr_base64 : `data:image/jpeg;base64,${qr.qr_base64}`;
+  const src = qr.qr_base64.startsWith('data:')
+    ? qr.qr_base64
+    : `data:image/jpeg;base64,${qr.qr_base64}`;
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <img src={src} alt="Código QR de pago" className="h-56 w-56 object-contain" />
@@ -380,18 +430,39 @@ function OrderSummary({
   );
 }
 
-function StepDot({ n, label, active, done }: { n: number; label: string; active: boolean; done?: boolean }) {
+function StepDot({
+  n,
+  label,
+  active,
+  done,
+}: {
+  n: number;
+  label: string;
+  active: boolean;
+  done?: boolean;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span
         className={cn(
-          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors',
-          done ? 'bg-cta-500 text-white' : active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400',
+          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300',
+          done
+            ? 'bg-cta-500 text-white shadow-lg shadow-cta-500/40'
+            : active
+              ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/40'
+              : 'bg-white/15 text-white/40',
         )}
       >
         {done ? <IconCheck className="h-4 w-4" /> : n}
       </span>
-      <span className={cn('text-sm font-medium', active || done ? 'text-slate-800' : 'text-slate-400')}>{label}</span>
+      <span
+        className={cn(
+          'text-sm font-medium transition-colors duration-300',
+          active || done ? 'text-white' : 'text-white/40',
+        )}
+      >
+        {label}
+      </span>
     </div>
   );
 }

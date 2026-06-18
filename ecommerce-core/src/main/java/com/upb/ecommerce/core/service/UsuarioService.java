@@ -10,6 +10,7 @@ import com.upb.ecommerce.data.repository.UsuarioRepository;
 import com.upb.ecommerce.domain.entities.Tienda;
 import com.upb.ecommerce.domain.entities.Usuario;
 import com.upb.ecommerce.domain.enums.RolType;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,19 +18,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final TiendaRepository tiendaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           TiendaRepository tiendaRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          EmailService emailService) {
         this.usuarioRepository = usuarioRepository;
         this.tiendaRepository = tiendaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     public List<UsuarioResponse> listarPorTienda(Long tiendaId) {
@@ -89,7 +94,13 @@ public class UsuarioService {
         usuario.setRol(request.getRol());
         usuario.setNumeroWhatsapp(request.getNumeroWhatsapp());
         usuario.setVisibleCatalogo(Boolean.TRUE.equals(request.getVisibleCatalogo()));
-        return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
+        UsuarioResponse respuesta = UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
+        try {
+            emailService.enviarContrasena(request.getEmail(), request.getPassword());
+        } catch (Exception e) {
+            log.warn("No se pudo enviar el correo de credenciales a {}: {}", request.getEmail(), e.getMessage());
+        }
+        return respuesta;
     }
 
     @Transactional
