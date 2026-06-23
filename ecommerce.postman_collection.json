@@ -65,7 +65,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tiendaId\": 1,\n  \"email\": \"admin@comercio1.com\",\n  \"password\": \"Admin123**\"\n}",
+              "raw": "{\n  \"tienda_id\": 1,\n  \"email\": \"admin@comercio1.com\",\n  \"password\": \"Admin123**\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -114,7 +114,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tiendaId\": 1,\n  \"email\": \"cliente@comercio1.com\",\n  \"password\": \"REEMPLAZA_CON_LA_PASSWORD_DEL_CLIENTE\"\n}",
+              "raw": "{\n  \"tienda_id\": 1,\n  \"email\": \"cliente@comercio1.com\",\n  \"password\": \"REEMPLAZA_CON_LA_PASSWORD_DEL_CLIENTE\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
