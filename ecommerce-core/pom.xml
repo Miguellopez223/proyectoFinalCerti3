@@ -25,10 +25,25 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Cache abstraction (@Cacheable/@CacheEvict) + Caffeine como proveedor en memoria.
+             Aun NO implementado: dependencias y config listas para cachear usuarios/productos. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- Envío de correos (JavaMailSender) para el recordatorio de carrito abandonado -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <!-- Thymeleaf: motor de plantillas para construir el HTML de los correos -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
         <!-- Spring Security Core (provided — resuelto por ecommerce-api en runtime) -->
         <dependency>

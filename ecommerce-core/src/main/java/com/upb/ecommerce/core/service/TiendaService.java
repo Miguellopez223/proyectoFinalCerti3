@@ -6,6 +6,7 @@ import com.upb.ecommerce.core.exception.NotDataFoundException;
 import com.upb.ecommerce.core.exception.OperationException;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.domain.entities.Tienda;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,8 @@ public class TiendaService {
         return TiendaResponse.fromEntity(tiendaRepository.save(tienda));
     }
 
+    // El catalogo muestra nombre/logo/contacto de la tienda: invalidarlo al editarla.
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public TiendaResponse actualizar(Long id, TiendaRequest request) {
         Tienda tienda = tiendaRepository.findById(id)
@@ -63,6 +66,8 @@ public class TiendaService {
         return TiendaResponse.fromEntity(tiendaRepository.save(tienda));
     }
 
+    // Tienda dada de baja: invalida su catalogo cacheado.
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public void desactivar(Long id) {
         Tienda tienda = tiendaRepository.findById(id)

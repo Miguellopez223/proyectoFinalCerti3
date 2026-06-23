@@ -8,6 +8,7 @@ import com.upb.ecommerce.data.repository.ProductoRepository;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.data.repository.UsuarioRepository;
 import com.upb.ecommerce.domain.entities.Tienda;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,10 @@ public class CatalogoService {
         this.usuarioRepository = usuarioRepository;
     }
 
+    // Ruta publica de mas trafico: se cachea el catalogo completo por slug de tienda.
+    // Se invalida (allEntries) desde Producto/Usuario/Tienda Service cuando cambia algo
+    // que el catalogo muestra (productos, contactos WhatsApp o datos de la tienda).
+    @Cacheable(value = "catalogo", key = "#slug")
     @Transactional(readOnly = true)
     public CatalogoResponse porSlug(String slug) {
         Tienda tienda = tiendaRepository.findBySlug(slug)

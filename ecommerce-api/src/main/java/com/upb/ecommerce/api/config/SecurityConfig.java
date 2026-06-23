@@ -57,6 +57,10 @@ public class SecurityConfig implements Serializable {
                         // Webhook de Stereum: público porque Stereum no envía JWT;
                         // se autentica con la firma HMAC validada en el controlador.
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/stereum/outbound").permitAll()
+                        // Endpoint de prueba de envío de correo (demo)
+                        .requestMatchers(HttpMethod.POST, "/api/notificaciones/prueba").permitAll()
+                        // Actuator: health publico para chequeos (resto requiere auth)
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers("/error").anonymous()
                         // Todo lo demas requiere JWT
                         .anyRequest().authenticated()

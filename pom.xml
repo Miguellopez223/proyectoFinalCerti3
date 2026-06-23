@@ -28,6 +28,9 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+		<!-- Conserva los nombres de parametros en el bytecode (-parameters). Necesario para
+		     que las claves SpEL del cache por nombre (@Cacheable key="#id") se resuelvan. -->
+		<maven.compiler.parameters>true</maven.compiler.parameters>
 	</properties>
 
 	<!-- Versiones centralizadas de los módulos internos -->

@@ -1,6 +1,8 @@
 package com.upb.ecommerce.api.controller;
 
-import com.upb.ecommerce.api.scheduler.CarritoAbandonadoJob;
+import com.upb.ecommerce.api.job.CarritoAbandonadoQuartzJob;
+import com.upb.ecommerce.api.quartz.service.JobService;
+import com.upb.ecommerce.api.quartz.service.JobUtil;
 import com.upb.ecommerce.core.dto.request.AgregarItemCarritoRequest;
 import com.upb.ecommerce.core.dto.response.CarritoResponse;
 import com.upb.ecommerce.core.service.CarritoService;
@@ -16,12 +18,12 @@ import java.util.Map;
 public class CarritoController {
 
     private final CarritoService carritoService;
-    private final CarritoAbandonadoJob carritoAbandonadoJob;
+    private final JobService jobService;
 
     public CarritoController(CarritoService carritoService,
-                             CarritoAbandonadoJob carritoAbandonadoJob) {
+                             JobService jobService) {
         this.carritoService = carritoService;
-        this.carritoAbandonadoJob = carritoAbandonadoJob;
+        this.jobService = jobService;
     }
 
     @GetMapping("/tienda/{tiendaId}/usuario/{usuarioId}")
@@ -47,13 +49,15 @@ public class CarritoController {
     }
 
     /**
-     * Dispara manualmente el barrido de carritos abandonados (el mismo que corre cada 8h por
-     * {@code @Scheduled}). Útil para demos: no hay que esperar al cron. Solo ADMIN.
+     * Dispara manualmente el barrido de carritos abandonados (el mismo job de Quartz que corre por
+     * cron). Usa {@code JobService.startJobNow(...)} para ejecutarlo de inmediato, sin esperar al
+     * cron. El job corre en un hilo de Quartz, así que la respuesta vuelve enseguida. Solo ADMIN.
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/barrer-abandonados")
     public ResponseEntity<Map<String, String>> barrerAbandonados() {
-        carritoAbandonadoJob.barrerCarritosAbandonados();
-        return ResponseEntity.ok(Map.of("mensaje", "Barrido de carritos abandonados ejecutado. Revisa los logs."));
+        jobService.startJobNow(CarritoAbandonadoQuartzJob.getJobDto(JobUtil.GROUP_NAME), null);
+        return ResponseEntity.ok(Map.of("mensaje",
+                "Barrido de carritos abandonados disparado vía Quartz. Revisa los logs."));
     }
 }

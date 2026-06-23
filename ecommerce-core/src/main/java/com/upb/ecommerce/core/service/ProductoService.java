@@ -11,6 +11,10 @@ import com.upb.ecommerce.domain.entities.Categoria;
 import com.upb.ecommerce.domain.entities.Producto;
 import com.upb.ecommerce.domain.entities.Tienda;
 import com.upb.ecommerce.domain.entities.UnidadMedida;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -52,12 +56,18 @@ public class ProductoService {
                 .stream().map(ProductoResponse::fromEntity).toList();
     }
 
+    // Primero busca el producto en la cache "productos"; si no esta, va a la BD y guarda
+    // el resultado. Clave compuesta tienda-producto: el productoId se valida contra la
+    // tienda, asi que la clave debe incluir ambos para no servir un producto de otra tienda.
+    @Cacheable(value = "productos", key = "#tiendaId + '-' + #productoId")
     public ProductoResponse obtenerPorId(Long tiendaId, Long productoId) {
         return ProductoResponse.fromEntity(
                 productoRepository.findByIdAndTiendaId(productoId, tiendaId)
                         .orElseThrow(() -> new NotDataFoundException("Producto no encontrado")));
     }
 
+    // Un producto nuevo cambia el catalogo de su tienda: se invalida la cache del catalogo.
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
@@ -83,6 +93,10 @@ public class ProductoService {
         return ProductoResponse.fromEntity(productoRepository.save(producto));
     }
 
+    // Refresca la entrada del producto en cache y, ademas, invalida el catalogo (precio,
+    // nombre o stock pudieron cambiar y el catalogo los muestra).
+    @CachePut(value = "productos", key = "#request.tiendaId + '-' + #id")
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public ProductoResponse actualizar(Long id, ProductoRequest request) {
         Producto producto = productoRepository.findByIdAndTiendaId(id, request.getTiendaId())
@@ -115,6 +129,11 @@ public class ProductoService {
                 .orElseThrow(() -> new NotDataFoundException("Unidad de medida no encontrada"));
     }
 
+    // Al eliminar (baja logica) saca el producto de su cache y ademas invalida el catalogo.
+    @Caching(evict = {
+            @CacheEvict(value = "productos", key = "#tiendaId + '-' + #id"),
+            @CacheEvict(value = "catalogo", allEntries = true)
+    })
     @Transactional
     public void eliminar(Long tiendaId, Long id) {
         Producto producto = productoRepository.findByIdAndTiendaId(id, tiendaId)

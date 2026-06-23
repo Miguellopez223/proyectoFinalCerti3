@@ -13,12 +13,5 @@ public class MailContentBuilder {
         this.templateEngine = templateEngine;
     }
 
-    public String sendPassword(String password) {
-        Context context = new Context();
-        context.setVariable("password", password);
-        context.setVariable("imageResourceName", "banner");
-        context.setVariable("imageX", "imageX");
-        context.setVariable("imageLinkedin", "imageLinkedin");
-        return templateEngine.process("mailPassword", context);
     }
 }
