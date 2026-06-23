@@ -1,11 +1,13 @@
 package com.upb.ecommerce.core.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.math.BigDecimal;
 
+@Component
 public class MailContentBuilder {
 
     private final TemplateEngine templateEngine;

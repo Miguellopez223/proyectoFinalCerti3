@@ -1,12 +1,10 @@
 package com.upb.ecommerce.core.config;
 
-import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.Year;
 
-@Component
 public class MailContentBuilder {
 
     private final TemplateEngine templateEngine;
