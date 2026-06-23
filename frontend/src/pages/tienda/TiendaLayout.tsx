@@ -2,23 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { tiendasApi } from '@/api/tiendas';
 import { cn } from '@/lib/cn';
 import { IconCart, IconStore, IconReceipt, IconLogout, IconUser } from '@/components/icons';
-import type { Tienda } from '@/types';
 
 export default function TiendaLayout() {
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
-  const [tienda, setTienda] = useState<Tienda | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    tiendasApi.obtener(user.tiendaId).then(setTienda).catch(() => setTienda(null));
-  }, [user]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -40,11 +32,14 @@ export default function TiendaLayout() {
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
           {/* Logo */}
           <Link to="/tienda" className="group flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-700 text-white shadow-lg shadow-brand-600/40 transition-transform duration-200 group-hover:scale-105">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-lg shadow-[#c4631d]/40 transition-transform duration-200 group-hover:scale-105"
+              style={{ background: 'linear-gradient(123deg, #7a3310 0%, #c4631d 55%, #e7a149 100%)' }}
+            >
               <IconStore className="h-5 w-5" />
             </span>
-            <span className="truncate text-base font-semibold text-white drop-shadow">
-              {tienda?.nombre ?? 'Mi tienda'}
+            <span className="truncate text-base font-semibold uppercase tracking-wide text-[#D7E2EA] drop-shadow">
+              EcommerceUPB
             </span>
           </Link>
 
@@ -55,10 +50,10 @@ export default function TiendaLayout() {
               end
               className={({ isActive }) =>
                 cn(
-                  'rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                  'rounded-lg px-3 py-2 text-sm font-medium uppercase tracking-wider transition-all duration-200',
                   isActive
-                    ? 'bg-white/15 text-white backdrop-blur-sm'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white',
+                    ? 'bg-white/10 text-[#D7E2EA]'
+                    : 'text-[#D7E2EA]/55 hover:text-[#D7E2EA]',
                 )
               }
             >
@@ -68,10 +63,10 @@ export default function TiendaLayout() {
               to="/tienda/pedidos"
               className={({ isActive }) =>
                 cn(
-                  'rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                  'rounded-lg px-3 py-2 text-sm font-medium uppercase tracking-wider transition-all duration-200',
                   isActive
-                    ? 'bg-white/15 text-white backdrop-blur-sm'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white',
+                    ? 'bg-white/10 text-[#D7E2EA]'
+                    : 'text-[#D7E2EA]/55 hover:text-[#D7E2EA]',
                 )
               }
             >
@@ -101,7 +96,10 @@ export default function TiendaLayout() {
                 onBlur={() => window.setTimeout(() => setMenuOpen(false), 150)}
                 className="flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white/10 py-1 pl-1 pr-2.5 backdrop-blur-sm transition-all duration-200 hover:bg-white/20"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-xs font-bold text-white shadow-sm">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg, #c4631d 0%, #e7a149 100%)' }}
+                >
                   {(user?.nombre ?? '?').charAt(0).toUpperCase()}
                 </span>
                 <span className="hidden max-w-[120px] truncate text-sm font-medium text-white/85 sm:block">
@@ -149,7 +147,7 @@ export default function TiendaLayout() {
             {user?.email}
           </span>
           <span className="text-sm text-white/35">
-            © {new Date().getFullYear()} {tienda?.nombre ?? 'MultiTienda'}
+            © {new Date().getFullYear()} EcommerceUPB
           </span>
         </div>
       </footer>

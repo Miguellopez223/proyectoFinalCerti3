@@ -26,7 +26,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Fira Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Kanit"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Kanit"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"Fira Code"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       boxShadow: {

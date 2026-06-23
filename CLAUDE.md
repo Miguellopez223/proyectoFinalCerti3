@@ -2,106 +2,104 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Frontend Design Philosophy
+
+Make creative, distinctive frontends that surprise and delight — avoid the generic "AI slop" aesthetic:
+
+- **Typography**: Choose beautiful, unique fonts. Avoid Inter, Roboto, Arial. Commit to distinctive choices.
+- **Color & Theme**: Use CSS variables. Dominant colors with sharp accents outperform timid palettes. Draw from IDE themes and cultural aesthetics.
+- **Motion**: Prioritize CSS-only animations. One well-orchestrated page load with staggered reveals (animation-delay) beats scattered micro-interactions. Use Motion library in React when available.
+- **Backgrounds**: Layer CSS gradients, use geometric patterns, add contextual effects — never default to flat solid colors.
+- Avoid Space Grotesk, purple-on-white gradients, predictable layouts. Vary between light/dark themes and unexpected aesthetic choices.
+
 ## Project Overview
 
-DISTILLED_AESTHETICS_PROMPT = """
-<frontend_aesthetics>
-You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
+Full-stack e-commerce platform for UPB. Spring Boot 4.0.6 (Java 21) REST API + React/TypeScript frontend. Features: JWT auth, multi-tenant stores, shopping cart, order processing, Stereum QR payments, abandoned cart notifications.
 
-Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
+## Commands
 
-Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and cultural aesthetics for inspiration.
-
-Motion: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions.
-
-Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
-
-Avoid generic AI-generated aesthetics:
-- Overused font families (Inter, Roboto, Arial, system fonts)
-- Clichéd color schemes (particularly purple gradients on white backgrounds)
-- Predictable layouts and component patterns
-- Cookie-cutter design that lacks context-specific character
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. You still tend to converge on common choices (Space Grotesk, for example) across generations. Avoid this: it is critical that you think outside the box!
-</frontend_aesthetics>
-"""
-
-
-Spring Boot 4.0.6 (Java 21) REST API for e-commerce with JWT auth, shopping cart management, order processing, and Stereum QR payment integration. Developed for UPB.
-
-## Build & Run Commands
-
+### Backend (Maven)
 ```bash
-# Build all modules
-./mvnw clean install
-
-# Build skipping tests
-./mvnw clean install -DskipTests
-
-# Run the API (starts on http://localhost:8081)
+# Run the API on http://localhost:8081
 ./mvnw spring-boot:run -pl ecommerce-api
 
-# Run tests
-./mvnw test
+# Build all modules
+./mvnw clean install -DskipTests
 
-# Run tests for a specific module
+# Run tests
 ./mvnw test -pl ecommerce-api
 ```
 
+On Windows without bash, use `mvnw.cmd` instead of `./mvnw`.
+
 **Prerequisites**: Java 21, PostgreSQL with database `ecommerceUPB` on port 5432.
+
+### Frontend (Vite + React)
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173
+npm run typecheck    # TypeScript check without build
+npm run build        # tsc --noEmit && vite build
+```
 
 ## Architecture
 
-
-
-
-
-Multi-module Maven project with Clean Architecture layering:
+### Backend — Multi-module Maven with Clean Architecture
 
 ```
 ecommerce-parent (root POM)
-├── ecommerce-domain   → JPA @Entity classes and enums
+├── ecommerce-domain   → JPA @Entity classes + enums
 ├── ecommerce-data     → Spring Data JPA repositories + DataSeeder
-├── ecommerce-core     → Business logic, DTOs, external API clients
-└── ecommerce-api      → REST controllers, Security config, Scheduler
+├── ecommerce-core     → Business logic services, DTOs, external API clients
+└── ecommerce-api      → REST controllers, Security config, Quartz jobs
 ```
 
-Dependencies flow inward: `api` → `core` → `data` → `domain`.
+Dependencies flow inward: `api` → `core` → `data` → `domain`. All code lives under `com.upb.ecommerce.<module>`.
 
-## Key Packages
+Key packages:
+- `api.controller` — REST endpoints (Auth, Carrito, Producto, Pedido, Pago, Dashboard, Reporte, etc.)
+- `api.config` — `SecurityConfig`, `JwtTokenProvider`, `JwtTokenFilter`, `TokenBlacklist`, `CorsFilter`, `GlobalExceptionHandler`
+- `api.scheduler` — `CarritoAbandonadoJob` (Spring `@Scheduled`, every 8h)
+- `api.quartz` — Quartz JDBC job store infrastructure (`JobService`, `JobInitializer`, `AutowiringSpringBeanJobFactory`)
+- `api.jobs` — `EmailSenderJob` (Quartz job class)
+- `core.service` — Business logic (one service interface per domain entity)
+- `core.integracion` — `StereumService` (QR payments via `RestClient`), `SistemaExternoService` (external ecommerce peer)
+- `data.repository` — JPA repositories with custom JPQL queries
+- `data.seeders` — `DataSeeder`: creates default `Comercio1` store + admin user on first run
+- `domain.entities` — `Usuario`, `Producto`, `Carrito`, `DetalleCarrito`, `Pedido`, `DetallePedido`, `Pago`, `Categoria`, `Tienda`, `MovimientoInventario`, etc.
+- `domain.enums` — `RolType` (ADMIN, CLIENTE), `UsuarioStatus`
 
-All code lives under `com.upb.ecommerce.<module>`:
+### Frontend — React + TypeScript + Tailwind
 
-- `api.controller` — REST endpoints (Auth, Carrito, Producto, Pedido, etc.)
-- `api.config` — Security (`SecurityConfig`, `JwtTokenProvider`, `JwtTokenFilter`, `TokenBlacklist`, `CorsFilter`, `GlobalExceptionHandler`)
-- `api.scheduler` — Abandoned cart sweep (runs every 8h via cron `0 0 */8 * * *`)
-- `core.service` — Business logic layer
-- `core.dto` — Request/Response DTOs
-- `core.integracion` — External API clients (Stereum payment, external ecommerce backend via `RestClient`)
-- `data.repository` — JPA Repositories
-- `data.seeders` — `DataSeeder` runs at startup to create default store and admin user
-- `domain.entities` — JPA entities (Usuario, Producto, Carrito, Pedido, etc.)
-- `domain.enums` — Roles and order/cart status enums
+React Router v6 with two protected role-based shells:
+- `/admin/*` — ADMIN role: Dashboard, Productos, Categorias, Unidades, Clientes, Inventario, Pedidos, Reportes
+- `/tienda/*` — CLIENTE role: Catalogo, ProductoDetalle, Carrito, Checkout, MisPedidos
+- `/catalogo/:slug` — Public storefront (no auth)
+
+State: `AuthContext` (JWT + user), `CartContext` (cart state for `/tienda`), `ToastContext` (notifications). API calls go through `src/api/client.ts` (axios instance that injects the JWT header).
 
 ## Security & Auth
 
-- JWT tokens with 8-hour expiration; `TokenBlacklist` handles logout invalidation
-- All errors follow **RFC 7807** Problem Details format via `GlobalExceptionHandler`
-- CORS filter enabled; configure allowed origins for non-dev environments
+- Auth: `POST /api/auth` with `{email, password, tiendaId}` → JWT (8h expiry).  Multi-tenant: user must belong to the requested `tiendaId`.
+- Logout: `POST /api/auth/logout` — token added to in-memory `TokenBlacklist` until expiry.
+- All errors return RFC 7807 Problem Details (`spring.mvc.problem-details.enabled=true`).
 
-## Important Behaviors
+## Scheduler Architecture
 
-- **Abandoned carts**: Carts idle >1 hour are flagged. Sweep runs every 8h and sends Gmail SMTP notifications asynchronously (thread pool: 5 core threads, 50-capacity queue)
-- **Schema management**: Hibernate `ddl-auto=update` auto-creates/updates schema on startup
-- **Payment**: Stereum QR code integration validated via HMAC-SHA256
-- **DataSeeder**: Creates default `Comercio1` store and admin user on first run
+Two parallel scheduling systems coexist:
 
-## Configuration
+1. **Spring `@Scheduled`** (`CarritoAbandonadoJob`) — abandonment sweep every 8h, processes carts in batches of 50, dispatches `@Async` workers (thread pool: 5 core / 50-queue). Carts idle >1h flagged ABANDONADO; Gmail SMTP notification sent (failure silently logged, cart still marked).
 
-Main config at `ecommerce-api/src/main/resources/application.properties`:
-- Server port: `8081`
-- DB: `jdbc:postgresql://localhost:5432/ecommerceUPB`
-- JWT secret (Base64 encoded), expiration in minutes
-- Stereum API key
-- Gmail SMTP credentials
-- Async thread pool and cron schedule settings
+2. **Quartz JDBC** — persistent job store on PostgreSQL (tables must be initialized once with `spring.quartz.jdbc.initialize-schema=always`, then set back to `never`). `JobInitializer` registers `EmailSenderJob` at startup (idempotent). Configured for clustering (`isClustered=true`). SQL schema: `ecommerce-api/src/main/resources/db/quartz-tables-postgres.sql`.
+
+## Payment Integration
+
+Stereum QR: `POST /api/v1/transactions/create-charge` with `x-api-key` header. Webhook signature validated via HMAC-SHA256 (`commons-codec`). Idempotency key auto-generated (UUID v4) if absent.
+
+## Configuration Notes
+
+- `spring.quartz.jdbc.initialize-schema`: set to `always` on first run to create Quartz tables, then `never`.
+- Gmail SMTP credentials (`spring.mail.username` / `spring.mail.password`) must use an App Password, not the regular account password. Empty credentials still allow the abandonment sweep — only email sending fails.
+- `sistema.externo.url-base`: currently points to `localhost:8081` (self); update to the peer ecommerce system's URL for real integration.
+- `ddl-auto=update`: Hibernate auto-migrates schema. New columns must be nullable to avoid breaking existing rows.
