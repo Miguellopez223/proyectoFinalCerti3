@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Date;
 
 @Slf4j
-@Service
+@Service("simpleJobServiceImpl")
 public class JobServiceImpl implements JobService {
 
     private final Scheduler scheduler;
