@@ -10,6 +10,10 @@ import com.upb.ecommerce.data.repository.UsuarioRepository;
 import com.upb.ecommerce.domain.entities.Tienda;
 import com.upb.ecommerce.domain.entities.Usuario;
 import com.upb.ecommerce.domain.enums.RolType;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,10 @@ public class UsuarioService {
                 .toList();
     }
 
+    // Cache "usuarios" indexada por el id del usuario: la primera llamada va a la BD y
+    // guarda el resultado; las siguientes (dentro de los 10 min de expiracion) lo devuelven
+    // desde memoria sin tocar la BD.
+    @Cacheable(value = "usuarios", key = "#id")
     public UsuarioResponse obtenerPorId(Long id) {
         return UsuarioResponse.fromEntity(
                 usuarioRepository.findById(id)
@@ -72,6 +80,8 @@ public class UsuarioService {
      * Alta de usuario por un ADMIN: respeta el rol enviado y permite configurar el número
      * de WhatsApp y la visibilidad en el catálogo público.
      */
+    // Un admin puede crear el usuario visible en catalogo y con WhatsApp: invalida el catalogo.
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public UsuarioResponse crearPorAdmin(UsuarioRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
@@ -92,6 +102,9 @@ public class UsuarioService {
         return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
     }
 
+    // Refresca el usuario en cache e invalida el catalogo (pudo cambiar su WhatsApp/visibilidad).
+    @CachePut(value = "usuarios", key = "#id")
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public UsuarioResponse actualizar(Long id, UsuarioRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -141,6 +154,11 @@ public class UsuarioService {
         return usuarioRepository.findByIdToValidateSession(id);
     }
 
+    // Quita el usuario de su cache e invalida el catalogo (si era visible, sale de contactos).
+    @Caching(evict = {
+            @CacheEvict(value = "usuarios", key = "#id"),
+            @CacheEvict(value = "catalogo", allEntries = true)
+    })
     @Transactional
     public void desactivar(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -149,6 +167,9 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    // Reactiva: refresca su cache e invalida el catalogo (si es visible, vuelve a contactos).
+    @CachePut(value = "usuarios", key = "#id")
+    @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public UsuarioResponse reactivar(Long id) {
         Usuario usuario = usuarioRepository.findById(id)

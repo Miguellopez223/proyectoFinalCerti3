@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="es" xml:lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light only" />
+    <title th:text="${titulo}">Notificación</title>
+
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+
+    <style type="text/css">
+        html, body { margin: 0 !important; padding: 0 !important; height: 100% !important; width: 100% !important; }
+        * { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; }
+        table { border-spacing: 0 !important; border-collapse: collapse !important; table-layout: fixed !important; margin: 0 auto !important; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        a { text-decoration: none; }
+        a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+
+        @media screen and (max-width: 600px) {
+            .email-container { width: 100% !important; margin: auto !important; }
+            .stack-padding { padding-left: 24px !important; padding-right: 24px !important; }
+            .h1 { font-size: 24px !important; line-height: 30px !important; }
+        }
+    </style>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f1f5f9;">
+
+    <!-- Texto de preview (preheader): se ve en la bandeja antes de abrir; oculto en el cuerpo -->
+    <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all; font-family:sans-serif;">
+        <span th:text="${preheader}">Tienes una nueva notificación</span>
+        &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;">
+        <tr>
+            <td align="center" style="padding:24px 12px;">
+
+                <!--[if mso]>
+                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="600"><tr><td>
+                <![endif]-->
+
+                <table role="presentation" class="email-container" align="center" cellpadding="0" cellspacing="0" border="0" width="600"
+                       style="width:600px; max-width:600px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.08);">
+
+                    <!-- Encabezado / marca -->
+                    <tr>
+                        <td align="left" style="background-color:#0e7490; padding:24px 32px; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:20px; font-weight:700; color:#ffffff; letter-spacing:0.2px;"
+                            th:text="${tiendaNombre}">Comercio1</td>
+                    </tr>
+
+                    <!-- Franja de acento -->
+                    <tr><td style="height:4px; background-color:#16a34a; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+                    <!-- Cuerpo -->
+                    <tr>
+                        <td class="stack-padding" style="padding:36px 32px 8px 32px; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                            <h1 class="h1" style="margin:0 0 16px 0; font-size:26px; line-height:32px; font-weight:700; color:#0f172a;"
+                                th:text="${titulo}">Título del correo</h1>
+
+                            <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#334155;"
+                               th:text="${saludo}">Hola,</p>
+
+                            <div style="margin:0 0 8px 0; font-size:16px; line-height:24px; color:#475569;"
+                                 th:utext="${cuerpo}">Contenido del mensaje.</div>
+                        </td>
+                    </tr>
+
+                    <!-- Botón de acción (opcional) -->
+                    <tr th:if="${botonUrl != null and !#strings.isEmpty(botonUrl)}">
+                        <td class="stack-padding" align="left" style="padding:16px 32px 8px 32px;">
+                            <a th:href="${botonUrl}" href="#" target="_blank"
+                               style="display:inline-block; background-color:#0e7490; color:#ffffff; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; font-weight:700; line-height:48px; text-align:center; text-decoration:none; padding:0 32px; border-radius:8px; mso-padding-alt:0;"
+                               th:text="${botonTexto}">Ver más</a>
+                        </td>
+                    </tr>
+
+                    <!-- Nota / caja informativa (opcional) -->
+                    <tr th:if="${nota != null and !#strings.isEmpty(nota)}">
+                        <td class="stack-padding" style="padding:16px 32px 8px 32px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f0fdfa; border-left:4px solid #0e7490; border-radius:6px;">
+                                <tr>
+                                    <td style="padding:14px 18px; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:20px; color:#475569;"
+                                        th:utext="${nota}">Nota informativa.</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Separador -->
+                    <tr>
+                        <td class="stack-padding" style="padding:24px 32px 0 32px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr><td style="border-top:1px solid #e2e8f0; font-size:0; line-height:0;">&nbsp;</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Pie -->
+                    <tr>
+                        <td class="stack-padding" align="center" style="padding:20px 32px 32px 32px; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                            <p style="margin:0 0 6px 0; font-size:13px; line-height:18px; color:#94a3b8;">
+                                Este es un correo automático de
+                                <strong style="color:#64748b;" th:text="${tiendaNombre}">Comercio1</strong>.
+                                Por favor no respondas a este mensaje.
+                            </p>
+                            <p style="margin:0; font-size:12px; line-height:18px; color:#cbd5e1;">
+                                &copy; <span th:text="${anio}">2026</span> <span th:text="${tiendaNombre}">Comercio1</span>. Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+                <!--[if mso]>
+                </td></tr></table>
+                <![endif]-->
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

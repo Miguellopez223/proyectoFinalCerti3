@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Search, ShoppingCart, ArrowDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { productosApi } from '@/api/productos';
@@ -7,24 +8,26 @@ import { categoriasApi } from '@/api/categorias';
 import { carritoApi } from '@/api/carrito';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebounced } from '@/hooks/useDebounced';
-import { DataState } from '@/components/ui/DataState';
-import { SkeletonCards } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/States';
-import { Input } from '@/components/ui/Field';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { ProductImage } from '@/components/ProductImage';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/errors';
-import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/cn';
-import { IconSearch, IconCart, IconBox } from '@/components/icons';
+import { FadeIn } from '@/components/landing/FadeIn';
+import { HeroProductField } from '@/components/landing/HeroProductField';
+import { AnimatedText } from '@/components/landing/AnimatedText';
+import { GradientPill } from '@/components/landing/PillButton';
+import { ProductMarquee } from '@/components/landing/ProductMarquee';
+import { StackingProducts } from '@/components/landing/StackingProducts';
+import { ProductCard } from '@/components/landing/ProductCard';
+
+/** Brand name shown across the storefront hero / display headings. */
+const BRAND = 'EcommerceUPB';
 
 export default function CatalogoPage() {
   const { user } = useAuth();
   const tiendaId = user!.tiendaId;
   const toast = useToast();
   const { refresh } = useCart();
+  const navigate = useNavigate();
 
   const productosState = useAsync(() => productosApi.listarPorTienda(tiendaId), [tiendaId]);
   const categoriasState = useAsync(() => categoriasApi.listarPorTienda(tiendaId), [tiendaId]);
@@ -34,13 +37,24 @@ export default function CatalogoPage() {
   const debounced = useDebounced(search, 300);
   const [addingId, setAddingId] = useState<number | null>(null);
 
-  const productos = useMemo(() => {
-    let list = productosState.data ?? [];
+  const allProducts = productosState.data ?? [];
+  const storeName = BRAND;
+
+  /* Top 5 most expensive in-stock products for the sticky-stacking showcase */
+  const showcase = useMemo(() => {
+    const inStock = allProducts.filter((p) => p.stock > 0 && p.imagenUrl);
+    const base = inStock.length >= 1 ? inStock : allProducts;
+    return [...base].sort((a, b) => b.precio - a.precio).slice(0, 5);
+  }, [allProducts]);
+
+  /* Filtered list for the full catalog grid */
+  const filtered = useMemo(() => {
+    let list = allProducts;
     if (categoriaId != null) list = list.filter((p) => p.categoriaId === categoriaId);
     const q = debounced.trim().toLowerCase();
     if (q) list = list.filter((p) => p.nombre.toLowerCase().includes(q));
     return list;
-  }, [productosState.data, categoriaId, debounced]);
+  }, [allProducts, categoriaId, debounced]);
 
   async function addToCart(productoId: number) {
     setAddingId(productoId);
@@ -55,108 +69,206 @@ export default function CatalogoPage() {
     }
   }
 
+  const goToProduct = (id: number) => navigate(`/tienda/producto/${id}`);
+  const heroPool = allProducts.filter((p) => p.imagenUrl);
+
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Catálogo</h1>
-        <p className="mt-1 text-sm text-slate-500">Explora los productos disponibles y arma tu pedido.</p>
-      </div>
+    <div className="overflow-x-clip">
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="relative flex min-h-[88vh] flex-col">
+        {/* Distributed magnetic product backdrop — behind everything */}
+        {heroPool.length > 0 && (
+          <HeroProductField products={heroPool} onSelect={goToProduct} />
+        )}
 
-      {/* Buscador */}
-      <div className="mb-4 max-w-md">
-        <div className="relative">
-          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input className="pl-9" placeholder="Buscar producto…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Buscar" />
-        </div>
-      </div>
+        {/* Heading — sits on top, readable */}
+        <FadeIn delay={0.15} y={40} className="pointer-events-none relative z-10 mt-[18vh] sm:mt-[22vh]">
+          <h1 className="hero-heading w-full whitespace-nowrap text-center font-black uppercase leading-none tracking-tight"
+            style={{ fontSize: 'clamp(2.25rem, 9vw, 7rem)' }}
+          >
+            {storeName}
+          </h1>
+        </FadeIn>
 
-      {/* Filtro de categorías */}
-      {(categoriasState.data?.length ?? 0) > 0 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          <CategoryChip active={categoriaId == null} onClick={() => setCategoriaId(null)}>
-            Todas
-          </CategoryChip>
-          {categoriasState.data?.map((c) => (
-            <CategoryChip key={c.id} active={categoriaId === c.id} onClick={() => setCategoriaId(c.id)}>
-              {c.nombre}
-            </CategoryChip>
-          ))}
+        {/* Bottom bar */}
+        <div className="relative z-10 mt-auto flex items-end justify-between gap-4 pb-8 pt-10">
+          <FadeIn delay={0.35} y={20}>
+            <p className="max-w-[180px] text-[clamp(0.75rem,1.4vw,1.25rem)] font-light uppercase leading-snug tracking-wide text-[#D7E2EA] sm:max-w-[240px]">
+              Una experiencia de compra hecha para sorprender y deleitar
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.5} y={20}>
+            <GradientPill onClick={() => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' })}>
+              Explorar <ArrowDown className="h-4 w-4" />
+            </GradientPill>
+          </FadeIn>
         </div>
+      </section>
+
+      {/* ── Marquee ──────────────────────────────────────────── */}
+      {allProducts.length > 2 && (
+        <section className="pt-12">
+          <ProductMarquee products={allProducts.filter((p) => p.imagenUrl).slice(0, 12)} />
+        </section>
       )}
 
-      <DataState
-        loading={productosState.loading}
-        error={productosState.error}
-        isEmpty={productos.length === 0}
-        onRetry={productosState.reload}
-        loadingFallback={<SkeletonCards count={8} />}
-        emptyFallback={
-          <EmptyState
-            title={debounced || categoriaId != null ? 'Sin coincidencias' : 'Catálogo vacío'}
-            message={debounced || categoriaId != null ? 'Prueba con otro filtro o término.' : 'Esta tienda aún no publicó productos.'}
-            icon={<IconBox />}
+      {/* ── Brand / about ────────────────────────────────────── */}
+      <section className="flex min-h-[70vh] flex-col items-center justify-center gap-12 py-24 text-center">
+        <FadeIn y={40}>
+          <h2 className="hero-heading font-black uppercase leading-none tracking-tight"
+            style={{ fontSize: 'clamp(2rem, 8vw, 96px)' }}
+          >
+            {storeName}
+          </h2>
+        </FadeIn>
+        <AnimatedText
+          text={`En ${storeName} seleccionamos cada producto con intención: calidad, diseño y una entrega impecable. Descubre piezas pensadas para quienes buscan destacar. Construyamos algo increíble juntos.`}
+          className="max-w-[560px] text-[clamp(1rem,2vw,1.35rem)] font-medium leading-relaxed text-[#D7E2EA]"
+        />
+      </section>
+
+      {/* ── Stacking showcase ────────────────────────────────── */}
+      {showcase.length >= 1 && (
+        <section className="pb-16">
+          <FadeIn y={30} className="mb-10 flex items-end justify-between gap-4">
+            <h2 className="hero-heading font-black uppercase leading-none tracking-tight"
+              style={{ fontSize: 'clamp(2rem, 9vw, 110px)' }}
+            >
+              Destacados
+            </h2>
+            <span className="hidden text-xs uppercase tracking-[0.3em] text-white/35 sm:block">
+              Desliza para descubrir
+            </span>
+          </FadeIn>
+          <StackingProducts
+            products={showcase}
+            addingId={addingId}
+            onAddToCart={addToCart}
+            onNavigate={goToProduct}
           />
-        }
-      >
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {productos.map((p) => {
-            const agotado = p.stock <= 0;
-            return (
-              <article key={p.id} className="card-base group flex flex-col overflow-hidden transition-shadow hover:shadow-soft">
-                <Link to={`/tienda/producto/${p.id}`} className="block">
-                  <div className="relative">
-                    <ProductImage src={p.imagenUrl} alt={p.nombre} className="aspect-square w-full" />
-                    {agotado && (
-                      <span className="absolute right-2 top-2">
-                        <Badge tone="danger">Agotado</Badge>
-                      </span>
-                    )}
-                  </div>
-                </Link>
-                <div className="flex flex-1 flex-col p-4">
-                  {p.categoriaNombre && (
-                    <Badge tone="brand" className="mb-2 self-start">
-                      {p.categoriaNombre}
-                    </Badge>
-                  )}
-                  <Link to={`/tienda/producto/${p.id}`}>
-                    <h3 className="line-clamp-2 text-sm font-medium text-slate-900 transition-colors group-hover:text-brand-700">
-                      {p.nombre}
-                    </h3>
-                  </Link>
-                  <p className="mt-2 font-mono text-lg font-semibold text-slate-900">{formatCurrency(p.precio)}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{agotado ? 'Sin stock' : `${p.stock} disponibles`}</p>
-                  <Button
-                    className="mt-3 w-full"
-                    size="sm"
-                    variant="cta"
-                    disabled={agotado}
-                    loading={addingId === p.id}
-                    leftIcon={!agotado ? <IconCart className="h-4 w-4" /> : undefined}
-                    onClick={() => addToCart(p.id)}
-                  >
-                    {agotado ? 'Agotado' : 'Agregar'}
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
+        </section>
+      )}
+
+      {/* ── Full catalog ─────────────────────────────────────── */}
+      <section id="catalogo" className="scroll-mt-24 pt-12">
+        <FadeIn y={30} className="mb-8">
+          <h2 className="hero-heading font-black uppercase leading-none tracking-tight"
+            style={{ fontSize: 'clamp(2rem, 9vw, 110px)' }}
+          >
+            Catálogo
+          </h2>
+        </FadeIn>
+
+        {/* Search */}
+        <div className="mb-6 max-w-md">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" />
+            <input
+              className="w-full rounded-full border border-white/12 bg-white/5 py-3.5 pl-11 pr-4 text-sm uppercase tracking-wide text-[#D7E2EA] placeholder:text-white/30 transition-colors focus:border-[#B600A8]/60 focus:outline-none"
+              placeholder="Buscar producto…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Buscar producto"
+            />
+          </div>
         </div>
-      </DataState>
+
+        {/* Category chips */}
+        {(categoriasState.data?.length ?? 0) > 0 && (
+          <div className="mb-10 flex flex-wrap gap-2">
+            <Chip active={categoriaId == null} onClick={() => setCategoriaId(null)}>
+              Todo
+            </Chip>
+            {categoriasState.data?.map((c) => (
+              <Chip key={c.id} active={categoriaId === c.id} onClick={() => setCategoriaId(c.id)}>
+                {c.nombre}
+              </Chip>
+            ))}
+          </div>
+        )}
+
+        {/* States */}
+        {productosState.loading && <SkeletonGrid />}
+
+        {productosState.error && !productosState.loading && (
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-red-500/20 bg-red-500/5 py-16 text-center">
+            <p className="text-sm text-red-300/80">{productosState.error}</p>
+            <button
+              onClick={productosState.reload}
+              className="rounded-full bg-red-500/15 px-5 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/25"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {!productosState.loading && !productosState.error && (
+          filtered.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {filtered.map((p, i) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  index={i}
+                  addingId={addingId}
+                  onAddToCart={addToCart}
+                  onNavigate={goToProduct}
+                />
+              ))}
+            </div>
+          )
+        )}
+      </section>
     </div>
   );
 }
 
-function CategoryChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+// ── Support ──────────────────────────────────────────────────
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
-        active ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50',
+        'cursor-pointer rounded-full px-5 py-2 text-xs font-medium uppercase tracking-widest transition-colors duration-200',
+        active
+          ? 'border-2 border-[#D7E2EA] bg-[#D7E2EA] text-[#0C0C0C]'
+          : 'border-2 border-white/15 text-[#D7E2EA]/70 hover:border-[#D7E2EA]/50 hover:text-[#D7E2EA]',
       )}
     >
       {children}
     </button>
+  );
+}
+
+function SkeletonGrid() {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="aspect-[4/5] animate-pulse rounded-3xl bg-white/5 ring-1 ring-white/8" />
+      ))}
+    </div>
+  );
+}
+
+function Empty() {
+  return (
+    <div className="flex flex-col items-center py-24 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-white/30 ring-1 ring-white/10">
+        <ShoppingCart className="h-8 w-8" />
+      </div>
+      <p className="font-medium uppercase tracking-wide text-[#D7E2EA]/70">Sin coincidencias</p>
+      <p className="mt-1 text-sm text-white/35">Prueba con otro filtro o término de búsqueda.</p>
+    </div>
   );
 }

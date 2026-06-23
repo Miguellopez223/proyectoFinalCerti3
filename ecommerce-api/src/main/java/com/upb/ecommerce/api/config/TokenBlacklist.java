@@ -48,6 +48,12 @@ public class TokenBlacklist {
         return true;
     }
 
+    /** Cantidad de tokens actualmente invalidados (no expirados) en la lista negra. */
+    public int size() {
+        purgeExpired();
+        return blacklist.size();
+    }
+
     private void purgeExpired() {
         long now = System.currentTimeMillis();
         blacklist.entrySet().removeIf(entry -> entry.getValue() < now);
