@@ -36,8 +36,6 @@ public class SecurityConfig implements Serializable {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(corsFilter, SessionManagementFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        // Actuator - monitoreo sin autenticacion
-                        .requestMatchers("/actuator/**").permitAll()
                         // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",

@@ -1,6 +1,5 @@
-package com.upb.ecommerce.api.config;
+package com.upb.ecommerce.core.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
@@ -10,8 +9,17 @@ import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
+/**
+ * Construye manualmente el cliente SMTP ({@link JavaMailSender}) a partir de propiedades
+ * {@code mail.*} (mismo patrón que el proyecto de referencia del docente), en vez de usar
+ * el autoconfigurado por Spring Boot con {@code spring.mail.*}.
+ *
+ * <p>Las credenciales llegan por variable de entorno (ver application.properties). El bean es
+ * {@code @Lazy} y no abre conexión al crearse: solo conecta al SMTP cuando realmente se envía.
+ */
 @Component
 public class EmailSetting {
+
     @Value("${mail.host}")
     private String host;
 
@@ -32,8 +40,6 @@ public class EmailSetting {
 
     @Value("${mail.smtp.password}")
     private String password;
-
-
 
     @Bean
     @Lazy
