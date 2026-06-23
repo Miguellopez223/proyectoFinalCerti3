@@ -1,13 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Input, Select, Textarea } from '@/components/ui/Field';
+import { Input, Select, Textarea, FieldWrapper } from '@/components/ui/Field';
+import { ProductImage } from '@/components/ProductImage';
 import { productosApi } from '@/api/productos';
 import { categoriasApi } from '@/api/categorias';
 import { unidadesApi } from '@/api/unidades';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage, getFieldErrors } from '@/lib/errors';
 import { slugify } from '@/lib/format';
+import { openCloudinaryUploadWidget, cloudinaryConfigured } from '@/lib/cloudinary';
 import type { Categoria, Producto, ProductoRequest, UnidadMedida } from '@/types';
 
 interface Props {
@@ -39,6 +41,7 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [unidades, setUnidades] = useState<UnidadMedida[]>([]);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Carga selects al abrir.
   useEffect(() => {
@@ -78,6 +81,21 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
   function onNombreChange(value: string) {
     set('nombre', value);
     if (!slugTouched) set('slugProducto', slugify(value));
+  }
+
+  function handleSubirImagen() {
+    setUploading(true);
+    openCloudinaryUploadWidget(
+      (url) => {
+        set('imagenUrl', url);
+        toast.success('Imagen subida.');
+      },
+      (message) => {
+        setUploading(false);
+        toast.error(message);
+      },
+      () => setUploading(false),
+    );
   }
 
   function validate() {
@@ -164,12 +182,47 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
           hint="Identificador único en la URL."
           required
         />
-        <Input
-          label="URL de imagen"
-          value={form.imagenUrl}
-          onChange={(e) => set('imagenUrl', e.target.value)}
-          placeholder="https://…"
-        />
+        <FieldWrapper
+          label="Imagen del producto"
+          hint={
+            cloudinaryConfigured
+              ? 'Subí un archivo (se aloja en Cloudinary) o pegá una URL.'
+              : 'Falta configurar Cloudinary; por ahora solo se puede pegar una URL.'
+          }
+        >
+          <div className="flex items-start gap-3">
+            <ProductImage
+              src={form.imagenUrl || undefined}
+              alt={form.nombre || 'Producto'}
+              className="h-20 w-20 shrink-0 rounded-lg border border-slate-200"
+            />
+            <div className="flex-1 space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSubirImagen}
+                  loading={uploading}
+                  disabled={!cloudinaryConfigured}
+                >
+                  Subir imagen
+                </Button>
+                {form.imagenUrl && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => set('imagenUrl', '')}>
+                    Quitar
+                  </Button>
+                )}
+              </div>
+              <input
+                className="input-base"
+                value={form.imagenUrl}
+                onChange={(e) => set('imagenUrl', e.target.value)}
+                placeholder="https://… (o subí un archivo)"
+              />
+            </div>
+          </div>
+        </FieldWrapper>
         <Input
           label="Precio (Bs)"
           type="number"
