@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>¡Tienes productos esperándote!</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:30px 0;">
+    <tr>
+        <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background-color:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;">
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#1a56db;padding:24px 32px;">
+                        <p style="margin:0;color:#ffffff;font-size:24px;font-weight:bold;letter-spacing:-0.3px;">Tienda en Línea</p>
+                        <p style="margin:6px 0 0;color:#93b4f5;font-size:13px;">¡Tienes productos esperándote!</p>
+                    </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                    <td style="padding:32px;">
+                        <p style="margin:0 0 16px;font-size:14px;color:#444444;line-height:1.7;">
+                            Hola <strong th:text="${nombreCliente}">Cliente</strong>,
+                        </p>
+                        <p style="margin:0 0 24px;font-size:14px;color:#444444;line-height:1.7;">
+                            Notamos que dejaste productos en tu carrito sin completar la compra.
+                            ¡Todavía estás a tiempo de finalizarla!
+                        </p>
+                        <!-- Summary box -->
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td style="background-color:#f0f7ff;border:1px solid #bfdbfe;border-radius:6px;padding:20px 24px;">
+                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="font-size:13px;color:#64748b;padding-bottom:8px;">
+                                                Productos en el carrito
+                                            </td>
+                                            <td align="right" style="font-size:13px;color:#64748b;padding-bottom:8px;">
+                                                Total estimado
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="font-size:22px;font-weight:bold;color:#1e3a8a;">
+                                                <span th:text="${cantidadItems}">0</span> ítem(s)
+                                            </td>
+                                            <td align="right" style="font-size:22px;font-weight:bold;color:#1e3a8a;">
+                                                Bs. <span th:text="${#numbers.formatDecimal(total, 1, 2)}">0.00</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <p style="margin:24px 0 0;font-size:13px;color:#777777;line-height:1.6;">
+                            Vuelve a la tienda y finaliza tu pedido antes de que se agoten los productos.
+                            Si ya completaste tu compra, ignora este mensaje.
+                        </p>
+                    </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color:#f9f9f9;padding:16px 32px;border-top:1px solid #eeeeee;">
+                        <p style="margin:0;font-size:11px;color:#999999;">
+                            Este recordatorio fue enviado automáticamente. Por favor no respondas a este correo.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

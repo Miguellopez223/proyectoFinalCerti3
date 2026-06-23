@@ -50,7 +50,7 @@ public class DataSeeder implements CommandLineRunner {
             admin.setTienda(tienda);
             admin.setNombre("Roberto Rodriguez");
             admin.setEmail("admin@comercio1.com");
-            admin.setPassword(passwordEncoder.encode("Admin123**"));
+            admin.setPassword(passwordEncoder.encode("`Admin123**`"));
             admin.setRol(RolType.ADMIN);
             usuarioRepository.save(admin);
             log.info("Usuario admin creado: {} | password: Admin123**", admin.getEmail());

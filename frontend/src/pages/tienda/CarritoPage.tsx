@@ -54,7 +54,7 @@ export default function CarritoPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-16">
-        <Spinner label="Cargando carrito…" />
+        <Spinner className="text-white" label="Cargando carrito…" />
       </div>
     );
   }
@@ -62,36 +62,39 @@ export default function CarritoPage() {
   const items = cart?.items ?? [];
 
   return (
-    <div>
+    <div className="pt-8">
+      {/* Back */}
       <button
         onClick={() => navigate('/tienda')}
-        className="mb-5 inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-brand-600"
+        className="mb-6 inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-white/60 transition-colors hover:text-brand-300"
       >
         <IconArrowLeft className="h-4 w-4" /> Seguir comprando
       </button>
 
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-slate-900">Tu carrito</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-white">Tu carrito</h1>
 
       {items.length === 0 ? (
-        <EmptyState
-          title="Tu carrito está vacío"
-          message="Agrega productos desde el catálogo para empezar."
-          icon={<IconCart />}
-          action={
-            <Link to="/tienda">
-              <Button>Ir al catálogo</Button>
-            </Link>
-          }
-        />
+        <div className="rounded-3xl border border-white/10 bg-white/95 p-12 shadow-2xl shadow-black/30 backdrop-blur-sm">
+          <EmptyState
+            title="Tu carrito está vacío"
+            message="Agrega productos desde el catálogo para empezar."
+            icon={<IconCart />}
+            action={
+              <Link to="/tienda">
+                <Button>Ir al catálogo</Button>
+              </Link>
+            }
+          />
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Lista de items */}
+          {/* Lista */}
           <div className="lg:col-span-2">
             <Card className="divide-y divide-slate-100">
               {items.map((it) => (
                 <div key={it.id} className="flex items-center gap-4 p-4">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-slate-800">{it.productoNombre}</p>
+                    <p className="truncate font-semibold text-slate-800">{it.productoNombre}</p>
                     <p className="mt-0.5 text-sm text-slate-500">
                       {it.cantidad} × {formatCurrency(it.precioUnitario)}
                     </p>
@@ -101,7 +104,7 @@ export default function CarritoPage() {
                     onClick={() => removeItem(it.id)}
                     disabled={busyItem === it.id}
                     aria-label={`Eliminar ${it.productoNombre}`}
-                    className="cursor-pointer rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="cursor-pointer rounded-lg p-2 text-red-400 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                   >
                     {busyItem === it.id ? <Spinner className="h-4 w-4" /> : <IconTrash className="h-4 w-4" />}
                   </button>
@@ -130,7 +133,10 @@ export default function CarritoPage() {
               <Button className="mt-5 w-full" size="lg" variant="cta" onClick={() => navigate('/tienda/checkout')}>
                 Finalizar compra
               </Button>
-              <button onClick={() => refresh()} className="mt-3 w-full cursor-pointer text-center text-xs text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => refresh()}
+                className="mt-3 w-full cursor-pointer text-center text-xs text-slate-400 hover:text-slate-600"
+              >
                 Actualizar carrito
               </button>
             </Card>
