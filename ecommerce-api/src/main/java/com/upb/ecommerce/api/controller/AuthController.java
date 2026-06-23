@@ -1,7 +1,9 @@
 package com.upb.ecommerce.api.controller;
 
 import com.upb.ecommerce.api.config.JwtTokenProvider;
+import com.upb.ecommerce.api.config.GoogleTokenVerifier;
 import com.upb.ecommerce.api.config.TokenBlacklist;
+import com.upb.ecommerce.core.dto.request.GoogleLoginRequest;
 import com.upb.ecommerce.core.dto.request.LoginRequest;
 import com.upb.ecommerce.core.dto.response.LoginResponse;
 import com.upb.ecommerce.core.integracion.SistemaExternoAuthRequest;
@@ -50,6 +52,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final TokenBlacklist tokenBlacklist;
     private final SistemaExternoService sistemaExternoService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     @PostMapping
     public ResponseEntity<LoginResponse> token(@Valid @RequestBody LoginRequest data) {
@@ -102,6 +105,18 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                     "No se pudo autenticar contra el sistema externo");
         }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> authGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        GoogleTokenVerifier.GoogleProfile profile = googleTokenVerifier.verify(request.getIdToken());
+        Usuario usuario = usuarioService.findOrCreateGoogleUser(
+                request.getTiendaId(),
+                profile.email(),
+                profile.name()
+        );
+        log.info("Autenticado con Google: {}", profile.email());
+        return ok(jwtTokenProvider.createToken(usuario));
     }
 
     private LoginResponse auth(LoginRequest data) {

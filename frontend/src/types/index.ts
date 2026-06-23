@@ -27,6 +27,11 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface GoogleLoginRequest {
+  tienda_id: number;
+  id_token: string;
+}
+
 export interface LoginResponse {
   access_token: string;
   id_token?: string;

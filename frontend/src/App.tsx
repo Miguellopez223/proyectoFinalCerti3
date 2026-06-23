@@ -46,25 +46,26 @@ export default function App() {
         </Route>
       </Route>
 
-      {/* Storefront CLIENTE — CartProvider envuelve solo el área de cliente */}
-      <Route element={<ProtectedRoute rol="CLIENTE" />}>
-        <Route
-          path="/tienda"
-          element={
-            <CartProvider>
-              <TiendaLayout />
-            </CartProvider>
-          }
-        >
-          <Route index element={<CatalogoPage />} />
-          <Route path="producto/:productoId" element={<ProductoDetallePage />} />
+      {/* Storefront publico: el login se pide recien al comprar/ver carrito. */}
+      <Route
+        path="/tienda"
+        element={
+          <CartProvider>
+            <TiendaLayout />
+          </CartProvider>
+        }
+      >
+        <Route index element={<CatalogoPage />} />
+        <Route path="producto/:productoId" element={<ProductoDetallePage />} />
+
+        <Route element={<ProtectedRoute rol="CLIENTE" />}>
           <Route path="carrito" element={<CarritoPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="pedidos" element={<MisPedidosPage />} />
         </Route>
       </Route>
 
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/tienda" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { catalogoApi } from '@/api/catalogo';
 import { productosApi } from '@/api/productos';
 import { atributosApi } from '@/api/atributos';
 import { carritoApi } from '@/api/carrito';
+import { tiendasApi } from '@/api/tiendas';
 import { useAsync } from '@/hooks/useAsync';
 import { DataState } from '@/components/ui/DataState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,26 +23,47 @@ export default function ProductoDetallePage() {
   const { productoId = '' } = useParams();
   const id = Number(productoId);
   const { user } = useAuth();
-  const tiendaId = user!.tiendaId;
   const navigate = useNavigate();
   const toast = useToast();
   const { refresh } = useCart();
 
-  const productoState = useAsync(() => productosApi.obtener(tiendaId, id), [tiendaId, id]);
-  const atributosState = useAsync(() => atributosApi.listarPorProducto(id), [id]);
+  const tiendasState = useAsync(() => tiendasApi.listar(), []);
+  const tiendaPublica = tiendasState.data?.[0] ?? null;
+  const tiendaId = user?.tiendaId ?? tiendaPublica?.id;
+  const tiendaSlug = tiendaPublica?.slug;
+  const catalogoState = useAsync(
+    () => (user || !tiendaSlug ? Promise.resolve(null) : catalogoApi.porSlug(tiendaSlug)),
+    [user?.userId, tiendaSlug],
+  );
+  const productoState = useAsync(
+    () => (user && tiendaId ? productosApi.obtener(tiendaId, id) : Promise.resolve(null)),
+    [user?.userId, tiendaId, id],
+  );
+  const atributosState = useAsync(
+    () => (user ? atributosApi.listarPorProducto(id) : Promise.resolve([])),
+    [user?.userId, id],
+  );
 
   const [cantidad, setCantidad] = useState(1);
   const [adding, setAdding] = useState(false);
 
-  const producto = productoState.data;
+  const producto = user
+    ? productoState.data
+    : catalogoState.data?.productos.find((p) => p.id === id) ?? null;
+  const loading = tiendasState.loading || catalogoState.loading || Boolean(user && productoState.loading);
+  const error = tiendasState.error || catalogoState.error || productoState.error;
   const agotado = (producto?.stock ?? 0) <= 0;
   const max = producto?.stock ?? 1;
 
   async function addToCart() {
     if (!producto) return;
+    if (!user || !tiendaId) {
+      navigate('/login', { state: { from: `/tienda/producto/${producto.id}`, tiendaId } });
+      return;
+    }
     setAdding(true);
     try {
-      await carritoApi.agregarItem({ tiendaId, usuarioId: user!.userId, productoId: producto.id, cantidad });
+      await carritoApi.agregarItem({ tiendaId, usuarioId: user.userId, productoId: producto.id, cantidad });
       await refresh();
       toast.success('Agregado al carrito.');
     } catch (err) {
@@ -63,9 +86,13 @@ export default function ProductoDetallePage() {
       {/* Glass panel */}
       <div className="rounded-3xl border border-white/10 bg-white/95 p-6 shadow-2xl shadow-black/30 backdrop-blur-sm sm:p-8">
         <DataState
-          loading={productoState.loading}
-          error={productoState.error}
-          onRetry={productoState.reload}
+          loading={loading}
+          error={error}
+          onRetry={() => {
+            tiendasState.reload();
+            catalogoState.reload();
+            productoState.reload();
+          }}
           loadingFallback={
             <div className="grid gap-8 lg:grid-cols-2">
               <Skeleton className="aspect-square w-full rounded-xl" />

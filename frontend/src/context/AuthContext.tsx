@@ -13,6 +13,7 @@ interface AuthContextValue {
   initializing: boolean;
   /** Login multi-tienda: valida, decodifica JWT, obtiene rol y redirige por rol. */
   login: (tiendaId: number, email: string, password: string) => Promise<Rol>;
+  loginWithGoogle: (tiendaId: number, idToken: string) => Promise<Rol>;
   logout: () => Promise<void>;
 }
 
@@ -108,14 +109,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [clearSession],
   );
 
+  const loginWithGoogle = useCallback(
+    async (tiendaId: number, idToken: string): Promise<Rol> => {
+      setInitializing(true);
+      try {
+        const res = await authApi.loginGoogle({ tienda_id: tiendaId, id_token: idToken });
+        const token = res.access_token;
+        const userId = getUserIdFromToken(token);
+        if (!userId) {
+          throw new Error('No se pudo leer el usuario del token.');
+        }
+
+        const provisional: SessionUser = {
+          token,
+          userId,
+          tiendaId,
+          rol: 'CLIENTE',
+          nombre: 'Google',
+          email: '',
+          expiresAt: res.expires_at,
+        };
+        writeSession(provisional);
+
+        const perfil = await usuariosApi.obtener(userId);
+        const session: SessionUser = {
+          token,
+          userId,
+          tiendaId: perfil.tiendaId ?? tiendaId,
+          rol: perfil.rol,
+          nombre: perfil.nombre,
+          email: perfil.email,
+          expiresAt: res.expires_at,
+        };
+
+        writeSession(session);
+        setUser(session);
+        return session.rol;
+      } catch (err) {
+        clearSession();
+        throw err;
+      } finally {
+        setInitializing(false);
+      }
+    },
+    [clearSession],
+  );
+
   const logout = useCallback(async () => {
+    clearSession();
+    navigate('/tienda', { replace: true });
+
     try {
       await authApi.logout();
     } catch {
-      // aunque falle el backend, limpiamos localmente.
-    } finally {
-      clearSession();
-      navigate('/login', { replace: true });
+      // aunque falle el backend, la sesion local ya quedo cerrada.
     }
   }, [clearSession, navigate]);
 
@@ -125,9 +172,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       initializing,
       login,
+      loginWithGoogle,
       logout,
     }),
-    [user, initializing, login, logout],
+    [user, initializing, login, loginWithGoogle, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

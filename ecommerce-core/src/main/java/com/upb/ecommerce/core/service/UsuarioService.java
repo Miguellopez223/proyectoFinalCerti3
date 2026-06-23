@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UsuarioService {
@@ -126,6 +127,32 @@ public class UsuarioService {
      */
     public Optional<Usuario> findByEmailAndTiendaId(String email, Long tiendaId) {
         return usuarioRepository.findByEmailAndTiendaId(email, tiendaId);
+    }
+
+    @CacheEvict(value = "catalogo", allEntries = true)
+    @Transactional
+    public Usuario findOrCreateGoogleUser(Long tiendaId, String email, String nombre) {
+        Optional<Usuario> existente = usuarioRepository.findByEmailAndTiendaId(email, tiendaId);
+        if (existente.isPresent()) {
+            Usuario usuario = existente.get();
+            if (!usuario.isEnabled()) {
+                throw new OperationException("Usuario inactivo");
+            }
+            return usuario;
+        }
+
+        Tienda tienda = tiendaRepository.findById(tiendaId)
+                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+
+        Usuario usuario = new Usuario();
+        usuario.setTienda(tienda);
+        usuario.setNombre(nombre != null && !nombre.isBlank() ? nombre : email);
+        usuario.setEmail(email);
+        usuario.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        usuario.setRol(RolType.CLIENTE);
+        usuario.setVisibleCatalogo(false);
+        usuario.setEstado(true);
+        return usuarioRepository.save(usuario);
     }
 
     /**

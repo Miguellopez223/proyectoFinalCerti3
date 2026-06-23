@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, ArrowDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { catalogoApi } from '@/api/catalogo';
 import { productosApi } from '@/api/productos';
 import { categoriasApi } from '@/api/categorias';
 import { carritoApi } from '@/api/carrito';
+import { tiendasApi } from '@/api/tiendas';
 import { useAsync } from '@/hooks/useAsync';
 import { useDebounced } from '@/hooks/useDebounced';
 import { useToast } from '@/context/ToastContext';
@@ -24,21 +26,37 @@ const BRAND = 'EcommerceUPB';
 
 export default function CatalogoPage() {
   const { user } = useAuth();
-  const tiendaId = user!.tiendaId;
   const toast = useToast();
   const { refresh } = useCart();
   const navigate = useNavigate();
 
-  const productosState = useAsync(() => productosApi.listarPorTienda(tiendaId), [tiendaId]);
-  const categoriasState = useAsync(() => categoriasApi.listarPorTienda(tiendaId), [tiendaId]);
+  const tiendasState = useAsync(() => tiendasApi.listar(), []);
+  const tiendaPublica = tiendasState.data?.[0] ?? null;
+  const tiendaId = user?.tiendaId ?? tiendaPublica?.id;
+  const tiendaSlug = tiendaPublica?.slug;
+
+  const catalogoState = useAsync(
+    () => (user || !tiendaSlug ? Promise.resolve(null) : catalogoApi.porSlug(tiendaSlug)),
+    [user?.userId, tiendaSlug],
+  );
+  const productosState = useAsync(
+    () => (user && tiendaId ? productosApi.listarPorTienda(tiendaId) : Promise.resolve([])),
+    [user?.userId, tiendaId],
+  );
+  const categoriasState = useAsync(
+    () => (user && tiendaId ? categoriasApi.listarPorTienda(tiendaId) : Promise.resolve([])),
+    [user?.userId, tiendaId],
+  );
 
   const [categoriaId, setCategoriaId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const debounced = useDebounced(search, 300);
   const [addingId, setAddingId] = useState<number | null>(null);
 
-  const allProducts = productosState.data ?? [];
-  const storeName = BRAND;
+  const allProducts = user ? (productosState.data ?? []) : (catalogoState.data?.productos ?? []);
+  const storeName = user ? BRAND : (catalogoState.data?.tienda.nombre ?? tiendaPublica?.nombre ?? BRAND);
+  const loading = tiendasState.loading || catalogoState.loading || (user && productosState.loading);
+  const error = tiendasState.error || catalogoState.error || productosState.error;
 
   /* Top 5 most expensive in-stock products for the sticky-stacking showcase */
   const showcase = useMemo(() => {
@@ -57,9 +75,13 @@ export default function CatalogoPage() {
   }, [allProducts, categoriaId, debounced]);
 
   async function addToCart(productoId: number) {
+    if (!user || !tiendaId) {
+      navigate('/login', { state: { from: '/tienda', tiendaId } });
+      return;
+    }
     setAddingId(productoId);
     try {
-      await carritoApi.agregarItem({ tiendaId, usuarioId: user!.userId, productoId, cantidad: 1 });
+      await carritoApi.agregarItem({ tiendaId, usuarioId: user.userId, productoId, cantidad: 1 });
       await refresh();
       toast.success('Agregado al carrito.');
     } catch (err) {
@@ -71,6 +93,16 @@ export default function CatalogoPage() {
 
   const goToProduct = (id: number) => navigate(`/tienda/producto/${id}`);
   const heroPool = allProducts.filter((p) => p.imagenUrl);
+  const categoriasPublicas = useMemo(() => {
+    const map = new Map<number, string>();
+    allProducts.forEach((p) => {
+      if (p.categoriaId != null && p.categoriaNombre) {
+        map.set(p.categoriaId, p.categoriaNombre);
+      }
+    });
+    return Array.from(map, ([id, nombre]) => ({ id, nombre }));
+  }, [allProducts]);
+  const categorias = user ? (categoriasState.data ?? []) : categoriasPublicas;
 
   return (
     <div className="overflow-x-clip">
@@ -174,12 +206,12 @@ export default function CatalogoPage() {
         </div>
 
         {/* Category chips */}
-        {(categoriasState.data?.length ?? 0) > 0 && (
+        {categorias.length > 0 && (
           <div className="mb-10 flex flex-wrap gap-2">
             <Chip active={categoriaId == null} onClick={() => setCategoriaId(null)}>
               Todo
             </Chip>
-            {categoriasState.data?.map((c) => (
+            {categorias.map((c) => (
               <Chip key={c.id} active={categoriaId === c.id} onClick={() => setCategoriaId(c.id)}>
                 {c.nombre}
               </Chip>
@@ -188,13 +220,17 @@ export default function CatalogoPage() {
         )}
 
         {/* States */}
-        {productosState.loading && <SkeletonGrid />}
+        {loading && <SkeletonGrid />}
 
-        {productosState.error && !productosState.loading && (
+        {error && !loading && (
           <div className="flex flex-col items-center gap-4 rounded-3xl border border-red-500/20 bg-red-500/5 py-16 text-center">
-            <p className="text-sm text-red-300/80">{productosState.error}</p>
+            <p className="text-sm text-red-300/80">{error}</p>
             <button
-              onClick={productosState.reload}
+              onClick={() => {
+                tiendasState.reload();
+                catalogoState.reload();
+                productosState.reload();
+              }}
               className="rounded-full bg-red-500/15 px-5 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/25"
             >
               Reintentar
@@ -202,7 +238,7 @@ export default function CatalogoPage() {
           </div>
         )}
 
-        {!productosState.loading && !productosState.error && (
+        {!loading && !error && (
           filtered.length === 0 ? (
             <Empty />
           ) : (

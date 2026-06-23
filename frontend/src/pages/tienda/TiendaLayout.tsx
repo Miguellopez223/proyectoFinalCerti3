@@ -77,7 +77,8 @@ export default function TiendaLayout() {
           <div className="ml-auto flex items-center gap-2">
             {/* Cart */}
             <Link
-              to="/tienda/carrito"
+              to={user ? '/tienda/carrito' : '/login'}
+              state={user ? undefined : { from: '/tienda/carrito' }}
               className="relative cursor-pointer rounded-xl p-2.5 text-white/70 transition-all duration-200 hover:bg-white/15 hover:text-white"
               aria-label={`Carrito, ${itemCount} artículo(s)`}
             >
@@ -90,7 +91,8 @@ export default function TiendaLayout() {
             </Link>
 
             {/* User menu */}
-            <div className="relative">
+            {user ? (
+              <div className="relative">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 onBlur={() => window.setTimeout(() => setMenuOpen(false), 150)}
@@ -123,14 +125,26 @@ export default function TiendaLayout() {
                   </button>
                   <div className="my-1 border-t border-white/10" />
                   <button
-                    onClick={() => logout()}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void logout();
+                    }}
                     className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
                   >
                     <IconLogout className="h-4 w-4" /> Cerrar sesión
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login', { state: { from: '/tienda' } })}
+                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/85 transition-colors hover:bg-white/20 hover:text-white"
+              >
+                Iniciar sesión
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -144,7 +158,7 @@ export default function TiendaLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6">
           <span className="flex items-center gap-1.5 text-sm text-white/35">
             <IconUser className="h-4 w-4" />
-            {user?.email}
+            {user?.email ?? 'Invitado'}
           </span>
           <span className="text-sm text-white/35">
             © {new Date().getFullYear()} EcommerceUPB
