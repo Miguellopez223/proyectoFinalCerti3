@@ -70,10 +70,21 @@ All code lives under `com.upb.ecommerce.<module>`:
 - `domain.entities` — JPA entities (Usuario, Producto, Carrito/DetalleCarrito, Pedido/DetallePedido, Pago, Categoria, MovimientoInventario, DireccionEnvio, Tienda, etc.)
 - `domain.enums` — `RolType`, `UsuarioStatus`, and order/cart status enums
 
+## Frontend Architecture (`frontend/`)
+
+React 18 + Vite + TypeScript + Tailwind SPA. Path alias `@/` → `src/` (configured in `tsconfig`/`vite.config`).
+
+- **Provider stack** (`main.tsx`): `BrowserRouter` → `ToastProvider` → `AuthProvider` → `App`. `GoogleOAuthProvider` wraps everything only when `VITE_GOOGLE_CLIENT_ID` is set (Google login degrades gracefully when unset).
+- **API layer** (`src/api/`): one typed module per backend domain (`productos.ts`, `pedidos.ts`, etc.), all built on the shared axios instance in `api/client.ts`. A request interceptor injects `Authorization: Bearer <token>` from the persisted session; a response interceptor calls the registered `onUnauthorized` handler on 401 (except during a login attempt) to clear the session and redirect to `/login`.
+- **Auth** (`context/AuthContext.tsx`): session is a `SessionUser` persisted in `localStorage` under key `multitienda.session`. Login flow = authenticate → decode JWT for the userId (`lib/jwt.ts`) → fetch the profile to resolve real `rol`/`tiendaId`/`nombre`. `homePathForRol` routes ADMIN → `/admin`, others → `/tienda`. The provider registers its logout-on-401 handler into the axios interceptor, keeping axios decoupled from the router.
+- **Routing** (`App.tsx`): three areas — public (`/login`, `/registro`, `/catalogo/:slug`), the **admin panel** under `/admin` (gated by `<ProtectedRoute rol="ADMIN">`), and the **storefront** under `/tienda` (public browsing; `CartProvider` scopes the cart; checkout/cart/orders gated by `<ProtectedRoute rol="CLIENTE">`).
+- **Env vars**: `VITE_API_URL` (defaults to `http://localhost:8081`), `VITE_GOOGLE_CLIENT_ID` (must match backend `google.oauth.client-id`). Image uploads go through Cloudinary (`lib/cloudinary.ts`).
+- Shared primitives live in `components/ui/`; cross-cutting helpers in `lib/` (`format`, `errors`, `cn`, `jwt`).
+
 ## Security & Auth
 
 - JWT tokens, 8-hour expiration (`security.jwt.token.expire-length=480` minutes); `TokenBlacklist` invalidates tokens on logout
-- Login paths: `POST /api/auth` (credentials), `POST /api/auth/google` (Google ID token verified by `GoogleTokenVerifier`), `POST /api/auth/externo` (external backend)
+- Login paths: `POST /api/auth` (credentials), `POST /api/auth/google` (Google ID token verified by `GoogleTokenVerifier`), `POST /api/auth/externo` (external backend). `tienda_id` is **optional** in the login/Google requests — when omitted the user is resolved by email (`findActivoPorEmail`), and new Google users fall into the default store
 - Public (permitAll) endpoints are whitelisted explicitly in `SecurityConfig`: auth/register, `GET /api/tiendas`, `GET /api/catalogo/**`, the Stereum outbound webhook, and `GET /actuator/health`. Everything else requires a valid JWT.
 - All errors follow **RFC 7807** Problem Details (`GlobalExceptionHandler` + `spring.mvc.problem-details.enabled`), so framework errors (404/405) match the app's JSON error format
 - CORS enabled via `CorsFilter`; configure allowed origins for non-dev environments

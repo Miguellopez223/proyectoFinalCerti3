@@ -3,12 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthShell } from '@/components/AuthShell';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Field';
-import { tiendasApi } from '@/api/tiendas';
+import { Input } from '@/components/ui/Field';
 import { useAuth, homePathForRol } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/errors';
-import type { Tienda } from '@/types';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -17,18 +15,12 @@ export default function LoginPage() {
   const toast = useToast();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  const [tiendas, setTiendas] = useState<Tienda[]>([]);
-  const [loadingTiendas, setLoadingTiendas] = useState(true);
-  const [tiendaError, setTiendaError] = useState<string | null>(null);
-
-  const [tiendaId, setTiendaId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ tiendaId?: string; email?: string; password?: string }>({});
-  const loginState = location.state as { from?: string; tiendaId?: number } | null;
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const loginState = location.state as { from?: string } | null;
   const requestedPath = loginState?.from;
-  const requestedTiendaId = loginState?.tiendaId;
 
   function destinationFor(rol: 'ADMIN' | 'CLIENTE') {
     return requestedPath && rol === 'CLIENTE' ? requestedPath : homePathForRol(rol);
@@ -39,28 +31,8 @@ export default function LoginPage() {
     if (isAuthenticated && user) navigate(destinationFor(user.rol), { replace: true });
   }, [isAuthenticated, user, navigate, requestedPath]);
 
-  // Carga el catálogo de tiendas para el selector.
-  useEffect(() => {
-    let active = true;
-    tiendasApi
-      .listar()
-      .then((data) => {
-        if (!active) return;
-        setTiendas(data);
-        const tiendaFromState = data.find((tienda) => tienda.id === requestedTiendaId);
-        if (tiendaFromState) setTiendaId(String(tiendaFromState.id));
-        else if (data.length >= 1) setTiendaId(String(data[0].id));
-      })
-      .catch((err) => active && setTiendaError(getErrorMessage(err)))
-      .finally(() => active && setLoadingTiendas(false));
-    return () => {
-      active = false;
-    };
-  }, [requestedTiendaId]);
-
   function validate() {
     const next: typeof errors = {};
-    if (!tiendaId) next.tiendaId = 'Selecciona una tienda.';
     if (!email.trim()) next.email = 'El email es obligatorio.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Email no válido.';
     if (!password) next.password = 'La contraseña es obligatoria.';
@@ -73,7 +45,7 @@ export default function LoginPage() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const rol = await login(Number(tiendaId), email.trim(), password);
+      const rol = await login(email.trim(), password);
       toast.success('Bienvenido de vuelta.');
       navigate(destinationFor(rol), { replace: true });
     } catch (err) {
@@ -84,14 +56,10 @@ export default function LoginPage() {
   }
 
   async function handleGoogleCredential(idToken?: string) {
-    const next: typeof errors = {};
-    if (!tiendaId) next.tiendaId = 'Selecciona una tienda.';
-    setErrors(next);
-    if (!idToken || Object.keys(next).length > 0) return;
-
+    if (!idToken) return;
     setSubmitting(true);
     try {
-      const rol = await loginWithGoogle(Number(tiendaId), idToken);
+      const rol = await loginWithGoogle(idToken);
       toast.success('Bienvenido con Google.');
       navigate(destinationFor(rol), { replace: true });
     } catch (err) {
@@ -105,29 +73,10 @@ export default function LoginPage() {
     <AuthShell>
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-slate-900">Iniciar sesión</h2>
-        <p className="mt-1 text-sm text-slate-500">Elige tu tienda e ingresa tus credenciales.</p>
+        <p className="mt-1 text-sm text-slate-500">Ingresa tus credenciales para continuar.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <Select
-          label="Tienda"
-          required
-          value={tiendaId}
-          onChange={(e) => setTiendaId(e.target.value)}
-          error={errors.tiendaId}
-          disabled={loadingTiendas || !!tiendaError}
-        >
-          <option value="">{loadingTiendas ? 'Cargando tiendas…' : 'Selecciona una tienda'}</option>
-          {tiendas.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nombre}
-            </option>
-          ))}
-        </Select>
-        {tiendaError && (
-          <p className="-mt-2 text-xs text-red-600">No se pudieron cargar las tiendas: {tiendaError}</p>
-        )}
-
         <Input
           label="Email"
           type="email"

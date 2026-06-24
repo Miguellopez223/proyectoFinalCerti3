@@ -20,15 +20,13 @@ export interface Page<T> {
 }
 
 // --- Auth ------------------------------------------------------------------
-/** Body de POST /api/auth — OJO: el backend espera `tienda_id` (snake_case). */
+/** Body de POST /api/auth — solo credenciales; el backend resuelve la tienda por email. */
 export interface LoginRequest {
-  tienda_id: number;
   email: string;
   password: string;
 }
 
 export interface GoogleLoginRequest {
-  tienda_id: number;
   id_token: string;
 }
 

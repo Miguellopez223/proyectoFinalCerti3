@@ -150,10 +150,13 @@ public class AuthController {
     private LoginResponse auth(LoginRequest data) {
         log.info("Iniciando autenticación para email={} tiendaId={}", data.getEmail(), data.getTiendaId());
 
-        // 1. Validar que el usuario existe en esta tienda específica (multi-tenant)
+        // 1. Localizar al usuario. Si viene tiendaId se valida por (email, tienda);
+        //    si no, se resuelve solo por email (login únicamente con credenciales).
         Usuario usuario;
         try {
-            Optional<Usuario> userOpt = usuarioService.findByEmailAndTiendaId(data.getEmail(), data.getTiendaId());
+            Optional<Usuario> userOpt = data.getTiendaId() != null
+                    ? usuarioService.findByEmailAndTiendaId(data.getEmail(), data.getTiendaId())
+                    : usuarioService.findActivoPorEmail(data.getEmail());
             if (userOpt.isEmpty()) {
                 throw new BadCredentialsException("Email o contraseña son incorrectos");
             }
@@ -161,7 +164,7 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             throw e;
         } catch (Exception e) {
-            log.error("No se encontró el usuario {} en la tienda {}", data.getEmail(), data.getTiendaId());
+            log.error("No se encontró el usuario {}", data.getEmail());
             throw new BadCredentialsException("Email o contraseña son incorrectos");
         }
 

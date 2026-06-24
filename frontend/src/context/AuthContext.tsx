@@ -11,9 +11,9 @@ interface AuthContextValue {
   user: SessionUser | null;
   isAuthenticated: boolean;
   initializing: boolean;
-  /** Login multi-tienda: valida, decodifica JWT, obtiene rol y redirige por rol. */
-  login: (tiendaId: number, email: string, password: string) => Promise<Rol>;
-  loginWithGoogle: (tiendaId: number, idToken: string) => Promise<Rol>;
+  /** Login solo con credenciales: valida, decodifica JWT, obtiene rol y redirige por rol. */
+  login: (email: string, password: string) => Promise<Rol>;
+  loginWithGoogle: (idToken: string) => Promise<Rol>;
   logout: () => Promise<void>;
 }
 
@@ -57,11 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession, navigate]);
 
   const login = useCallback(
-    async (tiendaId: number, email: string, password: string): Promise<Rol> => {
+    async (email: string, password: string): Promise<Rol> => {
       setInitializing(true);
       try {
-        // 1. Autenticar (snake_case tienda_id).
-        const res = await authApi.login({ tienda_id: tiendaId, email, password });
+        // 1. Autenticar solo con credenciales; el backend resuelve la tienda por email.
+        const res = await authApi.login({ email, password });
         const token = res.access_token;
 
         // 2. Decodificar el JWT para sacar el userId (claim jti).
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const provisional: SessionUser = {
           token,
           userId,
-          tiendaId,
+          tiendaId: 0,
           rol: 'CLIENTE',
           nombre: email,
           email,
@@ -83,12 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         writeSession(provisional);
 
-        // 3. Obtener el perfil para conocer el rol y el nombre real.
+        // 3. Obtener el perfil para conocer el rol, el nombre y la tienda reales.
         const perfil = await usuariosApi.obtener(userId);
         const session: SessionUser = {
           token,
           userId,
-          tiendaId: perfil.tiendaId ?? tiendaId,
+          tiendaId: perfil.tiendaId,
           rol: perfil.rol,
           nombre: perfil.nombre,
           email: perfil.email,
@@ -110,10 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loginWithGoogle = useCallback(
-    async (tiendaId: number, idToken: string): Promise<Rol> => {
+    async (idToken: string): Promise<Rol> => {
       setInitializing(true);
       try {
-        const res = await authApi.loginGoogle({ tienda_id: tiendaId, id_token: idToken });
+        const res = await authApi.loginGoogle({ id_token: idToken });
         const token = res.access_token;
         const userId = getUserIdFromToken(token);
         if (!userId) {
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const provisional: SessionUser = {
           token,
           userId,
-          tiendaId,
+          tiendaId: 0,
           rol: 'CLIENTE',
           nombre: 'Google',
           email: '',
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const session: SessionUser = {
           token,
           userId,
-          tiendaId: perfil.tiendaId ?? tiendaId,
+          tiendaId: perfil.tiendaId,
           rol: perfil.rol,
           nombre: perfil.nombre,
           email: perfil.email,
