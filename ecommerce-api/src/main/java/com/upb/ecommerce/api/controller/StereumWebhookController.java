@@ -2,6 +2,8 @@ package com.upb.ecommerce.api.controller;
 
 import com.upb.ecommerce.core.integracion.StereumWebhookNotificacion;
 import com.upb.ecommerce.core.integracion.StereumWebhookService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -32,6 +34,7 @@ import java.time.Instant;
  *   <li>Si es de tipo "transaction", actualizar el pago/pedido correspondiente.</li>
  * </ol>
  */
+@Tag(name = "Webhook Stereum", description = "Recibe las notificaciones de Stereum Pay. Público; se valida con firma HMAC-SHA256")
 @Slf4j
 @RestController
 @RequestMapping("/api/webhooks/stereum")
@@ -53,6 +56,9 @@ public class StereumWebhookController {
         this.objectMapper = objectMapper;
     }
 
+    @Operation(summary = "Recibir una notificación de webhook de Stereum",
+            description = "Valida la firma HMAC (cabecera x-signature) y el timestamp (x-timestamp), luego procesa "
+                    + "la notificación. Responde 403 si la firma es inválida o la notificación expiró.")
     @PostMapping(value = "/outbound", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> outbound(
             @RequestHeader("x-signature") String signature,
