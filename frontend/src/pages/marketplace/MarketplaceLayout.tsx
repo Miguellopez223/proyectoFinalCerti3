@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { useDebounced } from '@/hooks/useDebounced';
 import { marketplaceApi } from '@/api/marketplace';
 import { CartDrawer } from '@/components/marketplace/CartDrawer';
+import { Footer } from '@/components/marketplace/Footer';
 import type { CategoriaPopular, Producto } from '@/types';
 
 /**
@@ -153,12 +154,7 @@ export default function MarketplaceLayout() {
         <Outlet />
       </main>
 
-      {/* Footer mínimo (el footer completo de soporte va en la Fase 6) */}
-      <footer className="border-t border-slate-200 bg-white py-6">
-        <div className="mx-auto max-w-7xl px-4 text-sm text-slate-400 sm:px-6">
-          © {new Date().getFullYear()} Klikea
-        </div>
-      </footer>
+      <Footer />
 
       <CartDrawer />
     </div>

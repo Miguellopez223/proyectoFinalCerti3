@@ -142,13 +142,25 @@
 - **ProductCard** unificado: imagen, badge `-X%`, badge "Nuevo" (id reciente), nombre, **tienda**,
   precio (tachado + oferta o único), botón agregar.
 
-## FASE 5 — Checkout multi-tienda
+## FASE 5 — Checkout multi-tienda  ✅ HECHA
+> Carrito guarda el **precio efectivo** (oferta vigente) en `CarritoService`. `PedidoService`
+> refactorizado: `convertirCarritoEnPedido(...)` + `crearDesdeCarritos(usuarioId, direccionId)`
+> (un pedido por carrito/tienda) + `listarTodosPorUsuario`. Endpoints `POST /api/pedidos/checkout/
+> usuario/{id}` y `GET /api/pedidos/usuario/{id}`. Frontend: `CheckoutPage` reescrita (dirección →
+> crea pedidos por tienda → un QR Stereum por pedido, con polling); `MisPedidosPage` cross-store
+> (cancela usando la tienda de cada pedido). Cobro a la cuenta única de la plataforma; reparto a
+> tiendas = conciliación posterior. Typecheck + compile OK.
 - En checkout, **dividir el carrito en un `Pedido` por tienda** (el modelo ya es por-tienda).
 - Cobro a la cuenta única (Stereum actual); guardar desglose por tienda; conciliación/comisión
   posterior (fuera del flujo automático, documentado).
 - `CheckoutPage` adaptado para mostrar el resumen agrupado por tienda y generar los pedidos.
 
-## FASE 6 — Footer + páginas de soporte + "Vende en Kilikea"
+## FASE 6 — Footer + páginas de soporte + "Vende en Klikea"  ✅ HECHA
+> `lib/footerContent.ts` con contenido adaptado/simplificado (genericizado a Klikea, contacto
+> real WhatsApp 75359849 / miguel762005@gmail.com); "Métodos de pago" alineado al QR Stereum.
+> `Footer` (3 bloques: marca+redes, Soporte clientes, Soporte vendedores) en `MarketplaceLayout`.
+> `InfoPage` genérica en `/tienda/info/:slug`. "Vende en Klikea" = enlace a WhatsApp
+> (wa.me/59175359849). Typecheck OK.
 - `Footer` con 3 bloques (marca+redes, Soporte Clientes, Soporte Vendedores).
 - Páginas con contenido **adaptado y simplificado** desde
   `docs/footer-soporte-contenido-fuente.md`, genericizado a **Klikea**, con los datos de

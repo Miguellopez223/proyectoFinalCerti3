@@ -23,13 +23,12 @@ const CANCELABLES = ['PENDIENTE', 'PAGADO', 'PREPARANDO'];
 
 export default function MisPedidosPage() {
   const { user } = useAuth();
-  const tiendaId = user!.tiendaId;
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
 
   const { data, loading, error, reload, setData } = useAsync(
-    () => pedidosApi.listarPorUsuario(tiendaId, user!.userId),
-    [tiendaId],
+    () => pedidosApi.listarTodos(user!.userId),
+    [user?.userId],
   );
 
   const [selected, setSelected] = useState<Pedido | null>(null);
@@ -42,7 +41,7 @@ export default function MisPedidosPage() {
         confirmLabel: 'Cancelar pedido',
       },
       async () => {
-        const updated = await pedidosApi.cancelar(tiendaId, pedido.id);
+        const updated = await pedidosApi.cancelar(pedido.tiendaId, pedido.id);
         setData((prev) => (prev ? prev.map((p) => (p.id === updated.id ? updated : p)) : prev));
         setSelected((s) => (s && s.id === updated.id ? updated : s));
         toast.success('Pedido cancelado.');

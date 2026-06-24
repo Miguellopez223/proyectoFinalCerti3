@@ -36,6 +36,19 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(tiendaId, usuarioId));
     }
 
+    @Operation(summary = "Listar todos los pedidos de un usuario (todas las tiendas)")
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<PedidoResponse>> listarTodosPorUsuario(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(pedidoService.listarTodosPorUsuario(usuarioId));
+    }
+
+    @Operation(summary = "Checkout multi-tienda: crea un pedido por cada carrito activo del usuario")
+    @PostMapping("/checkout/usuario/{usuarioId}")
+    public ResponseEntity<List<PedidoResponse>> checkout(@PathVariable Long usuarioId,
+                                                         @RequestParam(value = "direccionId", required = false) Long direccionId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.crearDesdeCarritos(usuarioId, direccionId));
+    }
+
     @Operation(summary = "Obtener un pedido por su id")
     @GetMapping("/tienda/{tiendaId}/{pedidoId}")
     public ResponseEntity<PedidoResponse> obtenerPorId(@PathVariable Long tiendaId,

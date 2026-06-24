@@ -22,6 +22,7 @@ import MarketplaceLayout from './pages/marketplace/MarketplaceLayout';
 import HomePage from './pages/marketplace/HomePage';
 import SearchResultsPage from './pages/marketplace/SearchResultsPage';
 import StorePage from './pages/marketplace/StorePage';
+import InfoPage from './pages/marketplace/InfoPage';
 import ProductoDetallePage from './pages/tienda/ProductoDetallePage';
 import CarritoPage from './pages/tienda/CarritoPage';
 import CheckoutPage from './pages/tienda/CheckoutPage';
@@ -62,6 +63,7 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="buscar" element={<SearchResultsPage />} />
         <Route path="comercio/:slug" element={<StorePage />} />
+        <Route path="info/:slug" element={<InfoPage />} />
         <Route path="producto/:productoId" element={<ProductoDetallePage />} />
 
         <Route element={<ProtectedRoute rol="CLIENTE" />}>

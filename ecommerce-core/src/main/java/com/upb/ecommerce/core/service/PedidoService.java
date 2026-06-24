@@ -59,6 +59,12 @@ public class PedidoService {
                 .stream().map(PedidoResponse::fromEntity).toList();
     }
 
+    /** Todos los pedidos del usuario (de todas las tiendas) — vista "Mis pedidos" del marketplace. */
+    public List<PedidoResponse> listarTodosPorUsuario(Long usuarioId) {
+        return pedidoRepository.findByUsuarioIdOrderByIdDesc(usuarioId)
+                .stream().map(PedidoResponse::fromEntity).toList();
+    }
+
     public PedidoResponse obtenerPorId(Long tiendaId, Long pedidoId) {
         return PedidoResponse.fromEntity(
                 pedidoRepository.findByIdAndTiendaId(pedidoId, tiendaId)
@@ -67,27 +73,57 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponse crearDesdeCarrito(CrearPedidoRequest request) {
-        Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
         Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
                 .orElseThrow(() -> new NotDataFoundException("Usuario no encontrado"));
         Carrito carrito = carritoRepository
                 .findByUsuarioIdAndTiendaIdAndEstado(request.getUsuarioId(), request.getTiendaId(), "ACTIVO")
                 .orElseThrow(() -> new NotDataFoundException("No hay carrito activo para este usuario"));
+        return PedidoResponse.fromEntity(
+                convertirCarritoEnPedido(carrito, usuario, resolverDireccion(request.getDireccionId())));
+    }
 
+    /**
+     * Checkout multi-tienda: convierte TODOS los carritos activos del usuario en un pedido por
+     * tienda (el modelo de pedido es por tienda). El cobro de cada pedido va a la cuenta única
+     * de la plataforma (Stereum); el reparto a cada tienda es una conciliación posterior.
+     */
+    @Transactional
+    public List<PedidoResponse> crearDesdeCarritos(Long usuarioId, Long direccionId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new NotDataFoundException("Usuario no encontrado"));
+        DireccionEnvio direccion = resolverDireccion(direccionId);
+        List<Carrito> carritos = carritoRepository.findByUsuarioIdAndEstado(usuarioId, "ACTIVO").stream()
+                .filter(c -> c.getDetalles() != null && !c.getDetalles().isEmpty())
+                .toList();
+        if (carritos.isEmpty()) {
+            throw new OperationException("No hay carritos con productos para procesar");
+        }
+        List<PedidoResponse> pedidos = new ArrayList<>();
+        for (Carrito c : carritos) {
+            pedidos.add(PedidoResponse.fromEntity(convertirCarritoEnPedido(c, usuario, direccion)));
+        }
+        return pedidos;
+    }
+
+    private DireccionEnvio resolverDireccion(Long direccionId) {
+        if (direccionId == null) return null;
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new NotDataFoundException("Dirección no encontrada"));
+    }
+
+    /** Convierte un carrito en un pedido (descuenta stock, registra salidas y marca el carrito). */
+    private Pedido convertirCarritoEnPedido(Carrito carrito, Usuario usuario, DireccionEnvio direccion) {
         if (carrito.getDetalles() == null || carrito.getDetalles().isEmpty()) {
             throw new OperationException("El carrito está vacío");
         }
+        Tienda tienda = carrito.getTienda();
 
         Pedido pedido = new Pedido();
         pedido.setTienda(tienda);
         pedido.setUsuario(usuario);
         pedido.setCodigoSeguimiento("PED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         pedido.setDetalles(new ArrayList<>());
-
-        if (request.getDireccionId() != null) {
-            DireccionEnvio direccion = direccionRepository.findById(request.getDireccionId())
-                    .orElseThrow(() -> new NotDataFoundException("Dirección no encontrada"));
+        if (direccion != null) {
             pedido.setDireccionEnvio(direccion);
         }
 
@@ -125,8 +161,7 @@ public class PedidoService {
 
         carrito.setEstado("CONVERTIDO_A_PEDIDO");
         carritoRepository.save(carrito);
-
-        return PedidoResponse.fromEntity(pedido);
+        return pedido;
     }
 
     @Transactional
