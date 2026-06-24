@@ -6,6 +6,7 @@ import com.upb.ecommerce.core.dto.response.FacetaTienda;
 import com.upb.ecommerce.core.dto.response.HomeResponse;
 import com.upb.ecommerce.core.dto.response.ProductoResponse;
 import com.upb.ecommerce.core.dto.response.TiendaResponse;
+import com.upb.ecommerce.core.exception.NotDataFoundException;
 import com.upb.ecommerce.data.repository.ProductoRepository;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.domain.entities.Producto;
@@ -85,6 +86,15 @@ public class MarketplaceService {
         return ordenar(new ArrayList<>(coincidencias), "relevante", termino).stream()
                 .limit(Math.max(limit, 1))
                 .toList();
+    }
+
+    /** Producto público por id (detalle del marketplace), solo si está activo. */
+    @Transactional(readOnly = true)
+    public ProductoResponse obtenerProducto(Long id) {
+        return productoRepository.findById(id)
+                .filter(p -> Boolean.TRUE.equals(p.getEstado()))
+                .map(ProductoResponse::fromEntity)
+                .orElseThrow(() -> new NotDataFoundException("Producto no encontrado"));
     }
 
     @Transactional(readOnly = true)

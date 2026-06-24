@@ -13,6 +13,7 @@ public class ProductoResponse {
     private Long id;
     private Long tiendaId;
     private String tiendaNombre;
+    private String tiendaSlug;
     private Long categoriaId;
     private String categoriaNombre;
     private Long unidadMedidaId;
@@ -39,6 +40,7 @@ public class ProductoResponse {
         r.setId(p.getId());
         r.setTiendaId(p.getTienda().getId());
         r.setTiendaNombre(p.getTienda().getNombre());
+        r.setTiendaSlug(p.getTienda().getSlug());
         if (p.getCategoria() != null) {
             r.setCategoriaId(p.getCategoria().getId());
             r.setCategoriaNombre(p.getCategoria().getNombre());

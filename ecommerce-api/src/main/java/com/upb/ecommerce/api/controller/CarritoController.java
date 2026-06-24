@@ -38,6 +38,12 @@ public class CarritoController {
         return ResponseEntity.ok(carritoService.obtenerCarritoActivo(tiendaId, usuarioId));
     }
 
+    @Operation(summary = "Listar los carritos activos de un usuario (todas las tiendas)")
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<java.util.List<CarritoResponse>> carritosActivos(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(carritoService.listarActivosPorUsuario(usuarioId));
+    }
+
     @Operation(summary = "Agregar un ítem al carrito")
     @PostMapping("/agregar")
     public ResponseEntity<CarritoResponse> agregarItem(@Valid @RequestBody AgregarItemCarritoRequest request) {

@@ -48,6 +48,12 @@ public class MarketplaceController {
         return ResponseEntity.ok(marketplaceService.sugerencias(q, limit));
     }
 
+    @Operation(summary = "Obtener un producto por id (detalle público del marketplace)")
+    @GetMapping("/producto/{id}")
+    public ResponseEntity<ProductoResponse> producto(@PathVariable Long id) {
+        return ResponseEntity.ok(marketplaceService.obtenerProducto(id));
+    }
+
     @Operation(summary = "Categorías más populares (por cantidad de productos)")
     @GetMapping("/categorias-populares")
     public ResponseEntity<List<CategoriaPopularResponse>> categoriasPopulares(

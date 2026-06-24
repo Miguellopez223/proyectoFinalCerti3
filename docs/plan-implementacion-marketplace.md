@@ -78,7 +78,26 @@
   (o reusar `/api/catalogo/{slug}` enriquecido).
 - **SecurityConfig:** `GET /api/marketplace/**` → permitAll.
 
-## FASE 3 — Frontend: layout marketplace + routing + carrito drawer
+## FASE 3 — Frontend: layout marketplace + routing + carrito drawer  ✅ HECHA
+> Implementado (estructura mínima, sin adornos):
+> - Backend: `GET /api/carrito/usuario/{usuarioId}` (carritos activos del usuario, multi-tienda).
+> - Frontend: `api/marketplace.ts`, `api/carrito.listarActivos`, tipos del marketplace.
+> - `CartContext` multi-tienda (carritos[] + itemCount total + estado del drawer), compat con
+>   `cart`/`setCart`/`refresh`. `useAddToCart` (usa la tienda del producto, abre el drawer).
+> - `MarketplaceLayout` (navbar: logo Klikea, menú Categorías [populares], buscador global con
+>   sugerencias, cuenta, carrito) + `CartDrawer` (agrupado por tienda) + footer mínimo.
+> - Páginas: `HomePage` (secciones home + bento de categorías [grupos fijos `lib/categoriaGrupos`]
+>   + tiendas), `SearchResultsPage` (filtro por comercio + orden + paginación). `ProductoCard` plano.
+> - Ruteo: bajo `/tienda` (índice=Home, `/tienda/buscar`); admin intacto. Typecheck + compile OK.
+>
+> **Desviaciones de scope (a propósito, para no romper nada):**
+> - El comprador sigue bajo `/tienda` (no `/`) para no romper logout/login/emails que apuntan ahí.
+> - `StorePage` dedicada (`/tienda/comercio/:slug`) y la **restructura del detalle de producto**
+>   (+ "Comprar ahora" + recomendados + endpoint público de producto) pasan a **FASE 4**. Por ahora:
+>   click en tienda/categoría = búsqueda por su nombre; el detalle usa la página existente.
+> - `TiendaLayout`/`CatalogoPage` viejos quedan como archivos huérfanos (sirven de referencia de
+>   estilo para el colaborador); ya no se rutean.
+> - El carrito guarda `precioUnitario = precio` (no la oferta); ajustar en FASE 5 (checkout/pricing).
 **Routing (`App.tsx`) reestructurado (admin intacto):**
 - `/` → **Home marketplace** (reemplaza el `CatalogoPage` mono-tienda actual).
 - `/buscar?q=...` → resultados de búsqueda (también lo usa el click en categoría).
@@ -100,7 +119,15 @@
   "Comprar ahora", "Ver mi carrito".
 - Al agregar, usar `producto.tiendaId` (no el de la sesión).
 
-## FASE 4 — Frontend: páginas
+## FASE 4 — Frontend: páginas  ✅ HECHA
+> Implementado: endpoint público `GET /api/marketplace/producto/{id}` + `tiendaSlug` en
+> `ProductoResponse`. `StorePage` (`/tienda/comercio/:slug`, reusa `/api/catalogo/{slug}`):
+> cabecera (logo/nombre/descripción/banner) + tiles de categoría + orden (cliente). Reescrito
+> `ProductoDetallePage`: imagen única, link a la tienda, precio con oferta, features estáticas,
+> detalles + atributos (solo con sesión), "Agregar al carrito" (drawer) + "Comprar ahora"
+> (→ checkout), medios de pago, "La combinación perfecta" (recomendados) y value props. Strip de
+> tiendas del home enlaza a la StorePage. Typecheck + compile OK.
+> Pendiente afinar en fases siguientes: el detalle no tiene galería (1 imagen, por decisión).
 - **HomePage:** hero/banners (placeholders estáticos) · "Los más buscados" · "Flash sales /
   Ofertas" · **bento de categorías agrupado** (grupos fijos del mapeo) · **strip de logos de
   tiendas** · value props.
