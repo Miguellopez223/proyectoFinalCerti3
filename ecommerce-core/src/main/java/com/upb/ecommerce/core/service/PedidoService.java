@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -200,19 +202,21 @@ public class PedidoService {
             throw new OperationException("El pedido ya fue pagado");
         }
 
+        validarDatosQr(req);
+
         Usuario usuario = pedido.getUsuario();
         StereumCustomer customer = StereumCustomer.builder()
                 .name(usuario.getNombre())
                 .lastname(".")
                 .documentNumber(req.getDocumentNumber() != null ? req.getDocumentNumber() : "0000000")
-                .email(usuario.getEmail())
                 .build();
 
+        // account_id no se setea aqui: StereumService lo completa con stereum.account-id.
         StereumCreateChargeRequest charge = StereumCreateChargeRequest.builder()
-                .country(req.getCountry())
+                .country(upper(req.getCountry()))
                 .amount(pedido.getTotal().toPlainString())
-                .currency(req.getCurrency())
-                .network(req.getNetwork())
+                .currency(upper(req.getCurrency()))
+                .network(upper(req.getNetwork()))
                 .chargeReason("Pago pedido " + pedido.getCodigoSeguimiento())
                 .reservationValidityTime(req.getReservationValidityTime())
                 .customer(customer)
@@ -231,5 +235,35 @@ public class PedidoService {
         pagoRepository.save(pago);
 
         return response;
+    }
+
+    /**
+     * Valida que la combinacion pais/moneda/red sea soportada por Stereum:
+     * solo Bolivia (BO); CSL cobra en BOB y POLYGON en USDT/USDC.
+     */
+    private void validarDatosQr(GenerarQrRequest req) {
+        String country = upper(req.getCountry());
+        String currency = upper(req.getCurrency());
+        String network = upper(req.getNetwork());
+
+        if (!"BO".equals(country)) {
+            throw new OperationException("Solo se soporta el pais BO para esta integracion");
+        }
+        if (!Set.of("BOB", "USDT", "USDC").contains(currency)) {
+            throw new OperationException("Moneda no soportada: " + req.getCurrency());
+        }
+        if (!Set.of("CSL", "POLYGON").contains(network)) {
+            throw new OperationException("Red no soportada: " + req.getNetwork());
+        }
+        if ("CSL".equals(network) && !"BOB".equals(currency)) {
+            throw new OperationException("La red CSL solo soporta cobros en BOB");
+        }
+        if ("POLYGON".equals(network) && !Set.of("USDT", "USDC").contains(currency)) {
+            throw new OperationException("La red POLYGON solo soporta USDT o USDC");
+        }
+    }
+
+    private String upper(String value) {
+        return value == null ? null : value.trim().toUpperCase(Locale.ROOT);
     }
 }

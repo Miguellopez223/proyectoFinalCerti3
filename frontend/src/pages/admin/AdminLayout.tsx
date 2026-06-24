@@ -34,6 +34,7 @@ const nav: NavItem[] = [
   { to: '/admin/inventario', label: 'Inventario', icon: IconWarehouse },
   { to: '/admin/pedidos', label: 'Pedidos', icon: IconReceipt },
   { to: '/admin/reportes', label: 'Reportes', icon: IconChart },
+  { to: '/admin/mi-tienda', label: 'Mi tienda', icon: IconStore },
 ];
 
 export default function AdminLayout() {

@@ -11,6 +11,11 @@ import com.upb.ecommerce.core.integracion.SistemaExternoAuthResponse;
 import com.upb.ecommerce.core.integracion.SistemaExternoService;
 import com.upb.ecommerce.core.service.UsuarioService;
 import com.upb.ecommerce.domain.entities.Usuario;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +46,7 @@ import static org.springframework.http.ResponseEntity.ok;
  * pero adaptado al modelo multi-tienda: primero valida que el usuario existe en
  * la tienda solicitada, luego usa AuthenticationManager para verificar la contraseña.
  */
+@Tag(name = "Autenticación", description = "Login (credenciales, Google, sistema externo) y cierre de sesión")
 @Slf4j
 @RestController
 @AllArgsConstructor
@@ -54,6 +60,12 @@ public class AuthController {
     private final SistemaExternoService sistemaExternoService;
     private final GoogleTokenVerifier googleTokenVerifier;
 
+    @Operation(summary = "Iniciar sesión con email y contraseña",
+            description = "Valida las credenciales del usuario dentro de una tienda (multi-tenant) y devuelve un JWT. Endpoint público.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Autenticación correcta; devuelve el token JWT"),
+            @ApiResponse(responseCode = "401", description = "Email o contraseña incorrectos")
+    })
     @PostMapping
     public ResponseEntity<LoginResponse> token(@Valid @RequestBody LoginRequest data) {
         try {
@@ -72,6 +84,10 @@ public class AuthController {
      * Cierra la sesión del usuario: invalida el JWT actual añadiéndolo a la lista
      * negra hasta su expiración. Requiere enviar el token en {@code Authorization}.
      */
+    @Operation(summary = "Cerrar sesión",
+            description = "Invalida el JWT actual añadiéndolo a la lista negra hasta su expiración. Requiere enviar el token en la cabecera Authorization.",
+            security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponse(responseCode = "200", description = "Sesión cerrada correctamente")
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -95,6 +111,12 @@ public class AuthController {
      * El token queda cacheado en {@link SistemaExternoService} para las siguientes
      * llamadas de integración.
      */
+    @Operation(summary = "Autenticar contra el sistema ecommerce externo",
+            description = "Hace login en el backend ecommerce par y cachea su token para las siguientes llamadas de integración. Endpoint público.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Token del sistema externo obtenido"),
+            @ApiResponse(responseCode = "502", description = "No se pudo autenticar contra el sistema externo")
+    })
     @PostMapping("/externo")
     public ResponseEntity<SistemaExternoAuthResponse> authExterno(
             @RequestBody SistemaExternoAuthRequest request) {
@@ -107,6 +129,12 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Iniciar sesión con Google",
+            description = "Verifica el ID token de Google, crea el usuario si no existe en la tienda y devuelve un JWT propio. Endpoint público.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Autenticación con Google correcta; devuelve el token JWT"),
+            @ApiResponse(responseCode = "401", description = "ID token de Google inválido")
+    })
     @PostMapping("/google")
     public ResponseEntity<LoginResponse> authGoogle(@Valid @RequestBody GoogleLoginRequest request) {
         GoogleTokenVerifier.GoogleProfile profile = googleTokenVerifier.verify(request.getIdToken());
@@ -122,10 +150,13 @@ public class AuthController {
     private LoginResponse auth(LoginRequest data) {
         log.info("Iniciando autenticación para email={} tiendaId={}", data.getEmail(), data.getTiendaId());
 
-        // 1. Validar que el usuario existe en esta tienda específica (multi-tenant)
+        // 1. Localizar al usuario. Si viene tiendaId se valida por (email, tienda);
+        //    si no, se resuelve solo por email (login únicamente con credenciales).
         Usuario usuario;
         try {
-            Optional<Usuario> userOpt = usuarioService.findByEmailAndTiendaId(data.getEmail(), data.getTiendaId());
+            Optional<Usuario> userOpt = data.getTiendaId() != null
+                    ? usuarioService.findByEmailAndTiendaId(data.getEmail(), data.getTiendaId())
+                    : usuarioService.findActivoPorEmail(data.getEmail());
             if (userOpt.isEmpty()) {
                 throw new BadCredentialsException("Email o contraseña son incorrectos");
             }
@@ -133,7 +164,7 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             throw e;
         } catch (Exception e) {
-            log.error("No se encontró el usuario {} en la tienda {}", data.getEmail(), data.getTiendaId());
+            log.error("No se encontró el usuario {}", data.getEmail());
             throw new BadCredentialsException("Email o contraseña son incorrectos");
         }
 

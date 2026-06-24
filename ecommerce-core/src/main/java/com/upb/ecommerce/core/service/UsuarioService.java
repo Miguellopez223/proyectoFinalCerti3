@@ -129,10 +129,18 @@ public class UsuarioService {
         return usuarioRepository.findByEmailAndTiendaId(email, tiendaId);
     }
 
+    /** Resuelve un usuario activo solo por email (login sin selección de tienda). */
+    public Optional<Usuario> findActivoPorEmail(String email) {
+        return usuarioRepository.findFirstByEmailAndEstadoTrue(email);
+    }
+
     @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public Usuario findOrCreateGoogleUser(Long tiendaId, String email, String nombre) {
-        Optional<Usuario> existente = usuarioRepository.findByEmailAndTiendaId(email, tiendaId);
+        // Si no se especifica tienda, resolvemos por email; los nuevos caen en la tienda por defecto.
+        Optional<Usuario> existente = tiendaId != null
+                ? usuarioRepository.findByEmailAndTiendaId(email, tiendaId)
+                : usuarioRepository.findFirstByEmailAndEstadoTrue(email);
         if (existente.isPresent()) {
             Usuario usuario = existente.get();
             if (!usuario.isEnabled()) {
@@ -141,8 +149,11 @@ public class UsuarioService {
             return usuario;
         }
 
-        Tienda tienda = tiendaRepository.findById(tiendaId)
-                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+        Tienda tienda = tiendaId != null
+                ? tiendaRepository.findById(tiendaId)
+                        .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"))
+                : tiendaRepository.findAll().stream().findFirst()
+                        .orElseThrow(() -> new NotDataFoundException("No hay tiendas configuradas"));
 
         Usuario usuario = new Usuario();
         usuario.setTienda(tienda);

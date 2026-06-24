@@ -39,7 +39,7 @@ export default function TiendaLayout() {
               <IconStore className="h-5 w-5" />
             </span>
             <span className="truncate text-base font-semibold uppercase tracking-wide text-[#D7E2EA] drop-shadow">
-              EcommerceUPB
+              Klikea
             </span>
           </Link>
 
@@ -161,7 +161,7 @@ export default function TiendaLayout() {
             {user?.email ?? 'Invitado'}
           </span>
           <span className="text-sm text-white/35">
-            © {new Date().getFullYear()} EcommerceUPB
+            © {new Date().getFullYear()} Klikea
           </span>
         </div>
       </footer>

@@ -5,6 +5,9 @@ import com.upb.ecommerce.core.dto.request.GenerarQrRequest;
 import com.upb.ecommerce.core.dto.response.PedidoResponse;
 import com.upb.ecommerce.core.integracion.StereumCreateChargeResponse;
 import com.upb.ecommerce.core.service.PedidoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+@Tag(name = "Pedidos", description = "Pedidos: creación desde el carrito, consulta, cambio de estado, cancelación y QR de pago")
+@SecurityRequirement(name = "bearerToken")
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {
@@ -24,23 +29,28 @@ public class PedidoController {
         this.pedidoService = pedidoService;
     }
 
+    @Operation(summary = "Listar los pedidos de un usuario en una tienda")
     @GetMapping("/tienda/{tiendaId}/usuario/{usuarioId}")
     public ResponseEntity<List<PedidoResponse>> listarPorUsuario(@PathVariable Long tiendaId,
                                                                  @PathVariable Long usuarioId) {
         return ResponseEntity.ok(pedidoService.listarPorUsuario(tiendaId, usuarioId));
     }
 
+    @Operation(summary = "Obtener un pedido por su id")
     @GetMapping("/tienda/{tiendaId}/{pedidoId}")
     public ResponseEntity<PedidoResponse> obtenerPorId(@PathVariable Long tiendaId,
                                                        @PathVariable Long pedidoId) {
         return ResponseEntity.ok(pedidoService.obtenerPorId(tiendaId, pedidoId));
     }
 
+    @Operation(summary = "Crear un pedido a partir del carrito activo")
     @PostMapping
     public ResponseEntity<PedidoResponse> crearDesdeCarrito(@Valid @RequestBody CrearPedidoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.crearDesdeCarrito(request));
     }
 
+    @Operation(summary = "Actualizar el estado de un pedido",
+            description = "Cambia el estado del pedido (PENDIENTE, PAGADO, ENVIADO, etc.). Requiere rol ADMIN.")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/tienda/{tiendaId}/{pedidoId}/estado")
     public ResponseEntity<PedidoResponse> actualizarEstado(@PathVariable Long tiendaId,
@@ -49,6 +59,7 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.actualizarEstado(tiendaId, pedidoId, estado));
     }
 
+    @Operation(summary = "Cancelar un pedido")
     @PatchMapping("/tienda/{tiendaId}/{pedidoId}/cancelar")
     public ResponseEntity<PedidoResponse> cancelar(@PathVariable Long tiendaId,
                                                    @PathVariable Long pedidoId) {
@@ -59,6 +70,8 @@ public class PedidoController {
      * Genera el QR de pago (Stereum) para el pedido. El monto se toma del total
      * del pedido; el body es opcional (país, moneda, red, documento del pagador).
      */
+    @Operation(summary = "Generar el QR de pago (Stereum) de un pedido",
+            description = "El monto se toma del total del pedido. El body es opcional (país, moneda, red, documento del pagador).")
     @PostMapping("/tienda/{tiendaId}/{pedidoId}/qr")
     public ResponseEntity<StereumCreateChargeResponse> generarQr(
             @PathVariable Long tiendaId,

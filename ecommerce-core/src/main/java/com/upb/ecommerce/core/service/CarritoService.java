@@ -82,6 +82,14 @@ public class CarritoService {
         return CarritoResponse.fromEntity(carrito);
     }
 
+    /** Todos los carritos ACTIVOS del usuario (uno por tienda) — para el carrito multi-tienda. */
+    @Transactional(readOnly = true)
+    public java.util.List<CarritoResponse> listarActivosPorUsuario(Long usuarioId) {
+        return carritoRepository.findByUsuarioIdAndEstado(usuarioId, "ACTIVO").stream()
+                .map(CarritoResponse::fromEntity)
+                .toList();
+    }
+
     @Transactional
     public CarritoResponse agregarItem(AgregarItemCarritoRequest request) {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())

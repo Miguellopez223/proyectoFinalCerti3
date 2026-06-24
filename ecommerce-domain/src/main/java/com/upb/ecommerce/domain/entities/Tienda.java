@@ -22,6 +22,14 @@ public class Tienda {
     @Column(unique = true, nullable = false, length = 150)
     private String slug;
 
+    /** Descripción / tagline de la tienda, mostrada en su página de marketplace. */
+    @Column(columnDefinition = "TEXT")
+    private String descripcion;
+
+    /** Imagen de banner opcional para la cabecera de la página de la tienda. */
+    @Column(name = "banner_url", columnDefinition = "TEXT")
+    private String bannerUrl;
+
     @Column(name = "telefono_contacto", length = 50)
     private String telefonoContacto;
 

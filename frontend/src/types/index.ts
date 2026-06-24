@@ -20,15 +20,13 @@ export interface Page<T> {
 }
 
 // --- Auth ------------------------------------------------------------------
-/** Body de POST /api/auth — OJO: el backend espera `tienda_id` (snake_case). */
+/** Body de POST /api/auth — solo credenciales; el backend resuelve la tienda por email. */
 export interface LoginRequest {
-  tienda_id: number;
   email: string;
   password: string;
 }
 
 export interface GoogleLoginRequest {
-  tienda_id: number;
   id_token: string;
 }
 
@@ -57,10 +55,21 @@ export interface Tienda {
   id: number;
   nombre: string;
   slug: string;
+  descripcion?: string | null;
+  bannerUrl?: string | null;
   telefonoContacto?: string;
   emailContacto?: string;
   logoUrl?: string;
   estado: boolean;
+}
+export interface TiendaRequest {
+  nombre: string;
+  slug: string;
+  descripcion?: string | null;
+  bannerUrl?: string | null;
+  telefonoContacto?: string;
+  emailContacto?: string;
+  logoUrl?: string;
 }
 
 // --- Categoría -------------------------------------------------------------
@@ -93,6 +102,8 @@ export interface UnidadMedidaRequest {
 export interface Producto {
   id: number;
   tiendaId: number;
+  tiendaNombre?: string | null;
+  tiendaSlug?: string | null;
   categoriaId?: number | null;
   categoriaNombre?: string | null;
   unidadMedidaId?: number | null;
@@ -102,6 +113,13 @@ export interface Producto {
   descripcionLarga?: string | null;
   precio: number;
   precioCosto?: number | null;
+  precioOferta?: number | null;
+  ofertaInicio?: string | null;
+  ofertaFin?: string | null;
+  // Derivados calculados en el backend (según vigencia de la oferta):
+  enOferta?: boolean | null;
+  precioEfectivo?: number | null;
+  descuentoPorcentaje?: number | null;
   stock: number;
   stockMinimo?: number | null;
   imagenUrl?: string | null;
@@ -116,6 +134,9 @@ export interface ProductoRequest {
   descripcionLarga?: string;
   precio: number;
   precioCosto?: number | null;
+  precioOferta?: number | null;
+  ofertaInicio?: string | null;
+  ofertaFin?: string | null;
   stock: number;
   stockMinimo?: number | null;
   imagenUrl?: string;
@@ -348,6 +369,31 @@ export interface Catalogo {
   tienda: Tienda;
   productos: Producto[];
   contactosWhatsapp: string[];
+}
+
+// --- Marketplace -----------------------------------------------------------
+export interface FacetaTienda {
+  tiendaId: number;
+  nombre: string;
+  cantidad: number;
+}
+export interface BusquedaResponse {
+  productos: Producto[];
+  total: number;
+  page: number;
+  size: number;
+  totalPaginas: number;
+  facetasTiendas: FacetaTienda[];
+}
+export interface CategoriaPopular {
+  nombre: string;
+  cantidad: number;
+}
+export interface HomeData {
+  masBuscados: Producto[];
+  ofertas: Producto[];
+  destacados: Producto[];
+  tiendas: Tienda[];
 }
 
 // --- Error RFC 7807 --------------------------------------------------------

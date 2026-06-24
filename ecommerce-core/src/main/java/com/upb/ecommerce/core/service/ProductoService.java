@@ -80,6 +80,9 @@ public class ProductoService {
         producto.setDescripcionLarga(request.getDescripcionLarga());
         producto.setPrecio(request.getPrecio());
         producto.setPrecioCosto(request.getPrecioCosto());
+        producto.setPrecioOferta(request.getPrecioOferta());
+        producto.setOfertaInicio(request.getOfertaInicio());
+        producto.setOfertaFin(request.getOfertaFin());
         producto.setStock(request.getStock());
         producto.setImagenUrl(request.getImagenUrl());
         if (request.getStockMinimo() != null) producto.setStockMinimo(request.getStockMinimo());
@@ -107,6 +110,9 @@ public class ProductoService {
         producto.setDescripcionLarga(request.getDescripcionLarga());
         producto.setPrecio(request.getPrecio());
         producto.setPrecioCosto(request.getPrecioCosto());
+        producto.setPrecioOferta(request.getPrecioOferta());
+        producto.setOfertaInicio(request.getOfertaInicio());
+        producto.setOfertaFin(request.getOfertaFin());
         producto.setStock(request.getStock());
         producto.setImagenUrl(request.getImagenUrl());
         if (request.getStockMinimo() != null) producto.setStockMinimo(request.getStockMinimo());

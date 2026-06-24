@@ -8,6 +8,9 @@ import com.upb.ecommerce.core.integracion.TiendaExternoRequest;
 import com.upb.ecommerce.core.integracion.TiendaExternoResponse;
 import com.upb.ecommerce.core.integracion.UsuarioExternoRequest;
 import com.upb.ecommerce.core.integracion.UsuarioExternoResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,8 @@ import java.util.List;
  *       ({@link StereumService}).</li>
  * </ul>
  */
+@Tag(name = "Integración externa", description = "Consumo del sistema ecommerce par y generación de cobros Stereum. Solo ADMIN")
+@SecurityRequirement(name = "bearerToken")
 @Slf4j
 @RestController
 @AllArgsConstructor
@@ -42,6 +47,7 @@ public class IntegracionController {
 
     // --- Sistema externo: usuarios ------------------------------------------
 
+    @Operation(summary = "Listar usuarios del sistema externo")
     @GetMapping("/externo/usuarios/{tiendaId}")
     public ResponseEntity<List<UsuarioExternoResponse>> listarUsuariosExternos(@PathVariable Long tiendaId) {
         try {
@@ -51,6 +57,7 @@ public class IntegracionController {
         }
     }
 
+    @Operation(summary = "Crear un usuario en el sistema externo")
     @PostMapping("/externo/usuarios")
     public ResponseEntity<UsuarioExternoResponse> crearUsuarioExterno(
             @RequestBody UsuarioExternoRequest request) {
@@ -64,6 +71,7 @@ public class IntegracionController {
 
     // --- Sistema externo: tiendas -------------------------------------------
 
+    @Operation(summary = "Listar tiendas del sistema externo")
     @GetMapping("/externo/tiendas")
     public ResponseEntity<List<TiendaExternoResponse>> listarTiendasExternas() {
         try {
@@ -73,6 +81,7 @@ public class IntegracionController {
         }
     }
 
+    @Operation(summary = "Crear una tienda en el sistema externo")
     @PostMapping("/externo/tiendas")
     public ResponseEntity<TiendaExternoResponse> crearTiendaExterna(
             @RequestBody TiendaExternoRequest request) {
@@ -86,6 +95,7 @@ public class IntegracionController {
 
     // --- Stereum: generación de cobro (QR) ----------------------------------
 
+    @Operation(summary = "Generar un cobro (QR) genérico en Stereum")
     @PostMapping("/stereum/cargo")
     public ResponseEntity<StereumCreateChargeResponse> crearCargoStereum(
             @Valid @RequestBody StereumCreateChargeRequest request) {

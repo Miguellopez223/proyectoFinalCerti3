@@ -1,6 +1,8 @@
 package com.upb.ecommerce.api.controller;
 
 import com.upb.ecommerce.core.service.EmailService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,7 @@ import java.util.Map;
  * <p>Ejemplo: {@code POST /api/notificaciones/prueba?to=rllayus@gmail.com}. Devuelve si el
  * envío fue exitoso o el error de SMTP, para diagnosticar la configuración de Gmail.
  */
+@Tag(name = "Notificaciones", description = "Endpoint de prueba para diagnosticar el envío de correos (SMTP). Público")
 @RestController
 @RequestMapping("/api/notificaciones")
 public class NotificacionController {
@@ -27,6 +30,8 @@ public class NotificacionController {
         this.emailService = emailService;
     }
 
+    @Operation(summary = "Enviar un correo de prueba",
+            description = "Envía un correo de prueba al destinatario indicado (param to) para verificar la configuración SMTP de Gmail.")
     @PostMapping("/prueba")
     public ResponseEntity<Map<String, Object>> prueba(
             @RequestParam(defaultValue = "rllayus@gmail.com") String to) {
