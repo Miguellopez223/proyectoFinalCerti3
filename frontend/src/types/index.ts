@@ -103,6 +103,7 @@ export interface Producto {
   id: number;
   tiendaId: number;
   tiendaNombre?: string | null;
+  tiendaSlug?: string | null;
   categoriaId?: number | null;
   categoriaNombre?: string | null;
   unidadMedidaId?: number | null;
@@ -368,6 +369,31 @@ export interface Catalogo {
   tienda: Tienda;
   productos: Producto[];
   contactosWhatsapp: string[];
+}
+
+// --- Marketplace -----------------------------------------------------------
+export interface FacetaTienda {
+  tiendaId: number;
+  nombre: string;
+  cantidad: number;
+}
+export interface BusquedaResponse {
+  productos: Producto[];
+  total: number;
+  page: number;
+  size: number;
+  totalPaginas: number;
+  facetasTiendas: FacetaTienda[];
+}
+export interface CategoriaPopular {
+  nombre: string;
+  cantidad: number;
+}
+export interface HomeData {
+  masBuscados: Producto[];
+  ofertas: Producto[];
+  destacados: Producto[];
+  tiendas: Tienda[];
 }
 
 // --- Error RFC 7807 --------------------------------------------------------

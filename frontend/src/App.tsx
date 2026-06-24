@@ -18,8 +18,10 @@ import PedidosPage from './pages/admin/PedidosPage';
 import ReportesPage from './pages/admin/ReportesPage';
 import MiTiendaPage from './pages/admin/MiTiendaPage';
 
-import TiendaLayout from './pages/tienda/TiendaLayout';
-import CatalogoPage from './pages/tienda/CatalogoPage';
+import MarketplaceLayout from './pages/marketplace/MarketplaceLayout';
+import HomePage from './pages/marketplace/HomePage';
+import SearchResultsPage from './pages/marketplace/SearchResultsPage';
+import StorePage from './pages/marketplace/StorePage';
 import ProductoDetallePage from './pages/tienda/ProductoDetallePage';
 import CarritoPage from './pages/tienda/CarritoPage';
 import CheckoutPage from './pages/tienda/CheckoutPage';
@@ -53,11 +55,13 @@ export default function App() {
         path="/tienda"
         element={
           <CartProvider>
-            <TiendaLayout />
+            <MarketplaceLayout />
           </CartProvider>
         }
       >
-        <Route index element={<CatalogoPage />} />
+        <Route index element={<HomePage />} />
+        <Route path="buscar" element={<SearchResultsPage />} />
+        <Route path="comercio/:slug" element={<StorePage />} />
         <Route path="producto/:productoId" element={<ProductoDetallePage />} />
 
         <Route element={<ProtectedRoute rol="CLIENTE" />}>

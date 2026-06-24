@@ -5,33 +5,45 @@ import { useAuth } from './AuthContext';
 import type { Carrito } from '@/types';
 
 interface CartContextValue {
+  /** Carritos activos del usuario (uno por tienda) — marketplace multi-tienda. */
+  carritos: Carrito[];
+  /** Compat: primer carrito activo (las páginas single-store lo usan). */
   cart: Carrito | null;
+  /** Total de ítems sumando todas las tiendas (badge del navbar). */
   itemCount: number;
   loading: boolean;
   refresh: () => Promise<void>;
+  /** Compat: reemplaza/actualiza un carrito en la lista; null = re-cargar del servidor. */
   setCart: (cart: Carrito | null) => void;
+  // Drawer lateral
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 /**
- * Mantiene el carrito activo del CLIENTE para mostrar el contador en el header.
+ * Mantiene los carritos activos del CLIENTE (multi-tienda) y el estado del drawer.
  * Solo aplica al storefront; el ADMIN no lo usa.
  */
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [cart, setCart] = useState<Carrito | null>(null);
+  const [carritos, setCarritos] = useState<Carrito[]>([]);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!user || user.rol !== 'CLIENTE') return;
+    if (!user || user.rol !== 'CLIENTE') {
+      setCarritos([]);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await carritoApi.obtenerActivo(user.tiendaId, user.userId);
-      setCart(data);
+      const data = await carritoApi.listarActivos(user.userId);
+      setCarritos(data.filter((c) => c.items && c.items.length > 0));
     } catch {
-      // Si no hay carrito todavía, lo dejamos en null silenciosamente.
-      setCart(null);
+      setCarritos([]);
     } finally {
       setLoading(false);
     }
@@ -41,14 +53,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const itemCount = useMemo(
-    () => cart?.items?.reduce((sum, it) => sum + (it.cantidad ?? 0), 0) ?? 0,
-    [cart],
+  // Compat con páginas single-store: reemplaza un carrito ya cargado (o re-carga si es null).
+  const setCart = useCallback(
+    (c: Carrito | null) => {
+      if (c == null) {
+        void refresh();
+        return;
+      }
+      setCarritos((prev) => {
+        const otros = prev.filter((x) => x.id !== c.id);
+        return c.items && c.items.length > 0 ? [c, ...otros] : otros;
+      });
+    },
+    [refresh],
   );
 
+  const itemCount = useMemo(
+    () =>
+      carritos.reduce(
+        (sum, c) => sum + (c.items?.reduce((a, it) => a + (it.cantidad ?? 0), 0) ?? 0),
+        0,
+      ),
+    [carritos],
+  );
+
+  const cart = carritos[0] ?? null;
+  const openDrawer = useCallback(() => setDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
   const value = useMemo<CartContextValue>(
-    () => ({ cart, itemCount, loading, refresh, setCart }),
-    [cart, itemCount, loading, refresh],
+    () => ({ carritos, cart, itemCount, loading, refresh, setCart, drawerOpen, openDrawer, closeDrawer }),
+    [carritos, cart, itemCount, loading, refresh, setCart, drawerOpen, openDrawer, closeDrawer],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
