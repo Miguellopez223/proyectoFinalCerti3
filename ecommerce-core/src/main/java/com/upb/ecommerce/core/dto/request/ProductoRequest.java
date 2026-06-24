@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 public class ProductoRequest {
@@ -30,6 +31,13 @@ public class ProductoRequest {
     private BigDecimal precio;
 
     private BigDecimal precioCosto;
+
+    /** Precio de oferta (opcional). Si se envía null, se quita el descuento. */
+    private BigDecimal precioOferta;
+
+    /** Inicio/fin opcionales de la oferta (flash sale). */
+    private LocalDateTime ofertaInicio;
+    private LocalDateTime ofertaFin;
 
     @NotNull
     private Integer stock;

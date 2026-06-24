@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -44,6 +45,22 @@ public class Producto {
 
     @Column(name = "precio_costo", precision = 10, scale = 2)
     private BigDecimal precioCosto;
+
+    /**
+     * Precio de oferta (descuento). Nullable: si es null, el producto no está en oferta.
+     * Lo gestiona el admin para "poner/quitar" descuentos. Cuando está vigente, el precio
+     * efectivo del producto es éste en lugar de {@link #precio}.
+     */
+    @Column(name = "precio_oferta", precision = 10, scale = 2)
+    private BigDecimal precioOferta;
+
+    /** Inicio opcional de la oferta. Si es null, la oferta aplica desde ya. */
+    @Column(name = "oferta_inicio")
+    private LocalDateTime ofertaInicio;
+
+    /** Fin opcional de la oferta (flash sale). Si es null, la oferta no expira. */
+    @Column(name = "oferta_fin")
+    private LocalDateTime ofertaFin;
 
     @Column(nullable = false)
     private Integer stock = 0;

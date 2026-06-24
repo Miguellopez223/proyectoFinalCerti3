@@ -55,10 +55,21 @@ export interface Tienda {
   id: number;
   nombre: string;
   slug: string;
+  descripcion?: string | null;
+  bannerUrl?: string | null;
   telefonoContacto?: string;
   emailContacto?: string;
   logoUrl?: string;
   estado: boolean;
+}
+export interface TiendaRequest {
+  nombre: string;
+  slug: string;
+  descripcion?: string | null;
+  bannerUrl?: string | null;
+  telefonoContacto?: string;
+  emailContacto?: string;
+  logoUrl?: string;
 }
 
 // --- Categoría -------------------------------------------------------------
@@ -91,6 +102,7 @@ export interface UnidadMedidaRequest {
 export interface Producto {
   id: number;
   tiendaId: number;
+  tiendaNombre?: string | null;
   categoriaId?: number | null;
   categoriaNombre?: string | null;
   unidadMedidaId?: number | null;
@@ -100,6 +112,13 @@ export interface Producto {
   descripcionLarga?: string | null;
   precio: number;
   precioCosto?: number | null;
+  precioOferta?: number | null;
+  ofertaInicio?: string | null;
+  ofertaFin?: string | null;
+  // Derivados calculados en el backend (según vigencia de la oferta):
+  enOferta?: boolean | null;
+  precioEfectivo?: number | null;
+  descuentoPorcentaje?: number | null;
   stock: number;
   stockMinimo?: number | null;
   imagenUrl?: string | null;
@@ -114,6 +133,9 @@ export interface ProductoRequest {
   descripcionLarga?: string;
   precio: number;
   precioCosto?: number | null;
+  precioOferta?: number | null;
+  ofertaInicio?: string | null;
+  ofertaFin?: string | null;
   stock: number;
   stockMinimo?: number | null;
   imagenUrl?: string;

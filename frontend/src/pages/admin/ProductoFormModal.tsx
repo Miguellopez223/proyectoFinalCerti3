@@ -26,6 +26,9 @@ const emptyForm = {
   descripcionLarga: '',
   precio: '',
   precioCosto: '',
+  precioOferta: '',
+  ofertaInicio: '',
+  ofertaFin: '',
   stock: '',
   stockMinimo: '',
   imagenUrl: '',
@@ -62,6 +65,9 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
         descripcionLarga: producto.descripcionLarga ?? '',
         precio: String(producto.precio ?? ''),
         precioCosto: producto.precioCosto != null ? String(producto.precioCosto) : '',
+        precioOferta: producto.precioOferta != null ? String(producto.precioOferta) : '',
+        ofertaInicio: producto.ofertaInicio ? producto.ofertaInicio.slice(0, 16) : '',
+        ofertaFin: producto.ofertaFin ? producto.ofertaFin.slice(0, 16) : '',
         stock: String(producto.stock ?? ''),
         stockMinimo: producto.stockMinimo != null ? String(producto.stockMinimo) : '',
         imagenUrl: producto.imagenUrl ?? '',
@@ -104,6 +110,11 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
     if (!form.slugProducto.trim()) next.slugProducto = 'El slug es obligatorio.';
     const precio = Number(form.precio);
     if (!form.precio || Number.isNaN(precio) || precio <= 0) next.precio = 'El precio debe ser mayor a 0.';
+    if (form.precioOferta) {
+      const oferta = Number(form.precioOferta);
+      if (Number.isNaN(oferta) || oferta <= 0) next.precioOferta = 'El precio de oferta debe ser mayor a 0.';
+      else if (precio && oferta >= precio) next.precioOferta = 'La oferta debe ser menor al precio normal.';
+    }
     if (form.stock === '' || Number.isNaN(Number(form.stock)) || Number(form.stock) < 0)
       next.stock = 'El stock es obligatorio (≥ 0).';
     setErrors(next);
@@ -121,6 +132,9 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
       descripcionLarga: form.descripcionLarga.trim() || undefined,
       precio: Number(form.precio),
       precioCosto: form.precioCosto ? Number(form.precioCosto) : undefined,
+      precioOferta: form.precioOferta ? Number(form.precioOferta) : null,
+      ofertaInicio: form.precioOferta && form.ofertaInicio ? form.ofertaInicio : null,
+      ofertaFin: form.precioOferta && form.ofertaFin ? form.ofertaFin : null,
       stock: Number(form.stock),
       stockMinimo: form.stockMinimo ? Number(form.stockMinimo) : undefined,
       imagenUrl: form.imagenUrl.trim() || undefined,
@@ -241,6 +255,33 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
           value={form.precioCosto}
           onChange={(e) => set('precioCosto', e.target.value)}
           hint="Opcional, para el cálculo de utilidad."
+        />
+        <Input
+          className="sm:col-span-2"
+          label="Precio de oferta (Bs)"
+          type="number"
+          step="0.01"
+          min="0"
+          value={form.precioOferta}
+          onChange={(e) => set('precioOferta', e.target.value)}
+          error={errors.precioOferta}
+          hint="Opcional. Si lo llenás, el producto se muestra con descuento. Vacío = sin oferta."
+        />
+        <Input
+          label="Oferta desde (opcional)"
+          type="datetime-local"
+          value={form.ofertaInicio}
+          onChange={(e) => set('ofertaInicio', e.target.value)}
+          hint="Vacío = desde ya."
+          disabled={!form.precioOferta}
+        />
+        <Input
+          label="Oferta hasta (opcional)"
+          type="datetime-local"
+          value={form.ofertaFin}
+          onChange={(e) => set('ofertaFin', e.target.value)}
+          hint="Vacío = sin vencimiento. Para flash sale, poné fecha."
+          disabled={!form.precioOferta}
         />
         <Input
           label="Stock"

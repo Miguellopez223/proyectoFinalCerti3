@@ -20,9 +20,14 @@ Backend (Maven, run from repo root; `mvnw` wrapper is checked in):
 # Run the API (starts on http://localhost:8081)
 ./mvnw spring-boot:run -pl ecommerce-api
 
+# Run the API with the `local` profile (loads application-local.properties for local credentials)
+./mvnw spring-boot:run -pl ecommerce-api -Dspring-boot.run.profiles=local
+
 # Run tests (NOTE: there is currently no test source — `mvn test` is a no-op)
 ./mvnw test
 ```
+
+API docs: Swagger UI at `http://localhost:8081/swagger-ui.html`, OpenAPI JSON at `/v3/api-docs` (springdoc; both are public).
 
 On Windows use `mvnw.cmd` instead of `./mvnw`.
 
@@ -85,7 +90,7 @@ React 18 + Vite + TypeScript + Tailwind SPA. Path alias `@/` → `src/` (configu
 
 - JWT tokens, 8-hour expiration (`security.jwt.token.expire-length=480` minutes); `TokenBlacklist` invalidates tokens on logout
 - Login paths: `POST /api/auth` (credentials), `POST /api/auth/google` (Google ID token verified by `GoogleTokenVerifier`), `POST /api/auth/externo` (external backend). `tienda_id` is **optional** in the login/Google requests — when omitted the user is resolved by email (`findActivoPorEmail`), and new Google users fall into the default store
-- Public (permitAll) endpoints are whitelisted explicitly in `SecurityConfig`: auth/register, `GET /api/tiendas`, `GET /api/catalogo/**`, the Stereum outbound webhook, and `GET /actuator/health`. Everything else requires a valid JWT.
+- Public (permitAll) endpoints are whitelisted explicitly in `SecurityConfig`: auth/register, `GET`/`POST /api/tiendas`, `GET /api/catalogo/**`, the Stereum outbound webhook, the Swagger UI / `/v3/api-docs/**`, and `GET /actuator/health`. Everything else requires a valid JWT.
 - All errors follow **RFC 7807** Problem Details (`GlobalExceptionHandler` + `spring.mvc.problem-details.enabled`), so framework errors (404/405) match the app's JSON error format
 - CORS enabled via `CorsFilter`; configure allowed origins for non-dev environments
 
@@ -103,12 +108,12 @@ Quartz cron uses the **7-field Quartz format** (`sec min hour day month day-of-w
 - **Schema management**: Hibernate `ddl-auto=update` auto-creates/updates app tables on startup (Quartz tables are the exception — see DB setup above). New columns are declared nullable to avoid breaking rows from the `.backup` import.
 - **Email**: SMTP (Gmail) via a custom `JavaMailSender` bean + Thymeleaf templates. Credentials come from env vars `MAIL_SMTP_USERNAME` / `MAIL_SMTP_PASSWORD`; if unset, the app still boots but email sending fails. Async thread pool: 5 threads, 50-capacity queue (`async.*`).
 - **Payment**: Stereum QR integration; webhook signatures validated via HMAC-SHA256.
-- **Caching**: Caffeine is configured (`spring.cache.*`) but **not yet active** — `@EnableCaching` and `@Cacheable` annotations are not wired up yet.
+- **Caching**: Caffeine is **active** — `@EnableCaching` is on (`EcommerceApplication`) and `core.service` classes use `@Cacheable`/`@CacheEvict` on caches `usuarios`, `productos`, `catalogo` (e.g. `CatalogoService`, `ProductoService`, `UsuarioService`, `TiendaService`). Cache keys use SpEL on parameter names, which is why the build sets `-parameters` (`maven.compiler.parameters=true`).
 - **Actuator**: endpoints are an explicit whitelist (`health,info,metrics,quartz,scheduledtasks,loggers,caches`). Only `/actuator/health` is public; the rest require JWT. `env`/`heapdump`/`shutdown` are intentionally not exposed (they would leak the JWT secret, DB password, and Gmail credentials).
 
 ## Configuration
 
-Main config: `ecommerce-api/src/main/resources/application.properties`
+Main config: `ecommerce-api/src/main/resources/application.properties`. A `local` profile (`application-local.properties`) overrides credentials for local development — activate with `-Dspring-boot.run.profiles=local` (preferred over global Windows env vars).
 
 - Server port `8081`; DB `jdbc:postgresql://localhost:5432/ecommerce` (user `postgre`)
 - JWT secret (Base64) and expiration (minutes)
@@ -117,4 +122,5 @@ Main config: `ecommerce-api/src/main/resources/application.properties`
 - External backend (`sistema.externo.url-base`) + timeouts
 - Gmail SMTP settings (credentials via env vars) + email template data (`app.tienda-nombre`, `app.url-frontend`)
 - Quartz job store + cron schedules
-- Caffeine cache spec (config only, not yet used)
+- Caffeine cache spec (`spring.cache.*` — caches `usuarios,productos,catalogo`)
+- springdoc / Swagger UI settings

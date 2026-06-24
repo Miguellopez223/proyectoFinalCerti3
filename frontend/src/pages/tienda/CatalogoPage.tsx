@@ -22,7 +22,7 @@ import { StackingProducts } from '@/components/landing/StackingProducts';
 import { ProductCard } from '@/components/landing/ProductCard';
 
 /** Brand name shown across the storefront hero / display headings. */
-const BRAND = 'EcommerceUPB';
+const BRAND = 'Klikea';
 
 export default function CatalogoPage() {
   const { user } = useAuth();

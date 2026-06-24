@@ -47,6 +47,8 @@ public class TiendaService {
         Tienda tienda = new Tienda();
         tienda.setNombre(request.getNombre());
         tienda.setSlug(request.getSlug());
+        tienda.setDescripcion(request.getDescripcion());
+        tienda.setBannerUrl(request.getBannerUrl());
         tienda.setTelefonoContacto(request.getTelefonoContacto());
         tienda.setEmailContacto(request.getEmailContacto());
         tienda.setLogoUrl(request.getLogoUrl());
@@ -60,6 +62,8 @@ public class TiendaService {
         Tienda tienda = tiendaRepository.findById(id)
                 .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
         tienda.setNombre(request.getNombre());
+        tienda.setDescripcion(request.getDescripcion());
+        tienda.setBannerUrl(request.getBannerUrl());
         tienda.setTelefonoContacto(request.getTelefonoContacto());
         tienda.setEmailContacto(request.getEmailContacto());
         tienda.setLogoUrl(request.getLogoUrl());

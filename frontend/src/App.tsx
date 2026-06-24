@@ -16,6 +16,7 @@ import ClientesPage from './pages/admin/ClientesPage';
 import InventarioPage from './pages/admin/InventarioPage';
 import PedidosPage from './pages/admin/PedidosPage';
 import ReportesPage from './pages/admin/ReportesPage';
+import MiTiendaPage from './pages/admin/MiTiendaPage';
 
 import TiendaLayout from './pages/tienda/TiendaLayout';
 import CatalogoPage from './pages/tienda/CatalogoPage';
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="inventario" element={<InventarioPage />} />
           <Route path="pedidos" element={<PedidosPage />} />
           <Route path="reportes" element={<ReportesPage />} />
+          <Route path="mi-tienda" element={<MiTiendaPage />} />
         </Route>
       </Route>
 

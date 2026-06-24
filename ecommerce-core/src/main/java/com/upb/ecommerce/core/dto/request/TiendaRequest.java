@@ -12,6 +12,8 @@ public class TiendaRequest {
     @NotBlank
     private String slug;
 
+    private String descripcion;
+    private String bannerUrl;
     private String telefonoContacto;
     private String emailContacto;
     private String logoUrl;
