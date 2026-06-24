@@ -17,6 +17,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByUsuarioIdAndTiendaId(Long usuarioId, Long tiendaId);
 
+    /** Todos los pedidos del usuario (todas las tiendas), más recientes primero. */
+    List<Pedido> findByUsuarioIdOrderByIdDesc(Long usuarioId);
+
     Optional<Pedido> findByIdAndTiendaId(Long id, Long tiendaId);
 
     /** Pedidos "completados" (estado en la lista) dentro de un rango de fechas. */

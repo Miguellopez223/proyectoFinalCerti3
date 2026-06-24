@@ -11,6 +11,18 @@ export const pedidosApi = {
   listarPorUsuario: (tiendaId: number, usuarioId: number) =>
     api.get<Pedido[]>(`/api/pedidos/tienda/${tiendaId}/usuario/${usuarioId}`).then((r) => r.data),
 
+  /** Todos los pedidos del usuario (todas las tiendas). */
+  listarTodos: (usuarioId: number) =>
+    api.get<Pedido[]>(`/api/pedidos/usuario/${usuarioId}`).then((r) => r.data),
+
+  /** Checkout multi-tienda: crea un pedido por cada carrito activo. */
+  checkout: (usuarioId: number, direccionId?: number | null) =>
+    api
+      .post<Pedido[]>(`/api/pedidos/checkout/usuario/${usuarioId}`, null, {
+        params: { direccionId: direccionId ?? undefined },
+      })
+      .then((r) => r.data),
+
   obtener: (tiendaId: number, pedidoId: number) =>
     api.get<Pedido>(`/api/pedidos/tienda/${tiendaId}/${pedidoId}`).then((r) => r.data),
 

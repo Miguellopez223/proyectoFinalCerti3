@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -125,7 +126,7 @@ public class CarritoService {
             detalle.setCarrito(carrito);
             detalle.setProducto(producto);
             detalle.setCantidad(request.getCantidad());
-            detalle.setPrecioUnitario(producto.getPrecio());
+            detalle.setPrecioUnitario(precioEfectivo(producto));
             detalleCarritoRepository.save(detalle);
         }
 
@@ -153,6 +154,18 @@ public class CarritoService {
         }
         carrito.setTotalEstimado(BigDecimal.ZERO);
         return CarritoResponse.fromEntity(carritoRepository.save(carrito));
+    }
+
+    /** Precio efectivo del producto: el de oferta si está vigente, si no el normal. */
+    private BigDecimal precioEfectivo(Producto p) {
+        BigDecimal oferta = p.getPrecioOferta();
+        if (oferta == null || p.getPrecio() == null || oferta.compareTo(p.getPrecio()) >= 0) {
+            return p.getPrecio();
+        }
+        LocalDateTime ahora = LocalDateTime.now();
+        if (p.getOfertaInicio() != null && ahora.isBefore(p.getOfertaInicio())) return p.getPrecio();
+        if (p.getOfertaFin() != null && ahora.isAfter(p.getOfertaFin())) return p.getPrecio();
+        return oferta;
     }
 
     private void recalcularTotal(Long carritoId) {
