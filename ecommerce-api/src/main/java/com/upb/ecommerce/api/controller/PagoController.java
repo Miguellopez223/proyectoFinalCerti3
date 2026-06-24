@@ -1,8 +1,6 @@
 package com.upb.ecommerce.api.controller;
 
-import com.upb.ecommerce.core.dto.request.GenerarQrPagoRequest;
 import com.upb.ecommerce.core.dto.request.PagoRequest;
-import com.upb.ecommerce.core.dto.response.GenerarQrPagoResponse;
 import com.upb.ecommerce.core.dto.response.PagoResponse;
 import com.upb.ecommerce.core.dto.response.VerificarQrPagoResponse;
 import com.upb.ecommerce.core.service.PagoService;
@@ -38,12 +36,6 @@ public class PagoController {
     @PostMapping
     public ResponseEntity<PagoResponse> registrar(@Valid @RequestBody PagoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pagoService.registrar(request));
-    }
-
-    @Operation(summary = "Generar un QR de pago (Stereum)")
-    @PostMapping("/qr")
-    public ResponseEntity<GenerarQrPagoResponse> generarQr(@Valid @RequestBody GenerarQrPagoRequest request) throws Exception {
-        return ResponseEntity.status(HttpStatus.CREATED).body(pagoService.generarQr(request));
     }
 
     @Operation(summary = "Verificar el estado de un QR de pago por su transactionId")

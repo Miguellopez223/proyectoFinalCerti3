@@ -27,6 +27,8 @@ public class StereumService {
     private String urlBase;
     @Value("${stereum.api-key}")
     private String apiKey;
+    @Value("${stereum.account-id}")
+    private String accountId;
     @Value("${stereum.connect-timeout}")
     private int connectTimeout;
     @Value("${stereum.read-timeout}")
@@ -34,11 +36,15 @@ public class StereumService {
 
     /**
      * Genera un QR de cobro: {@code POST /api/v1/transactions/create-charge}.
-     * Si el request no trae {@code idempotency_key}, se genera un UUID v4 nuevo.
+     * Si el request no trae {@code idempotency_key}, se genera un UUID v4 nuevo, y si no
+     * trae {@code account_id} se completa con el configurado en {@code stereum.account-id}.
      */
     public StereumCreateChargeResponse crearCargo(StereumCreateChargeRequest request) throws Exception {
         if (request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank()) {
             request.setIdempotencyKey(UUID.randomUUID().toString());
+        }
+        if (request.getAccountId() == null || request.getAccountId().isBlank()) {
+            request.setAccountId(accountId);
         }
 
         RestClient restClient = create();
@@ -64,6 +70,35 @@ public class StereumService {
         }
 
         log.info("Cargo creado en Stereum OK");
+        return response.getBody();
+    }
+
+    /**
+     * Verifica el estado de un cargo: {@code GET /api/v1/transactions/{transactionId}/verify}.
+     * Devuelve la transaccion con su {@code transaction_status} actual.
+     */
+    public StereumCreateChargeResponse verificarCargo(String transactionId) throws Exception {
+        RestClient restClient = create();
+
+        ResponseEntity<StereumCreateChargeResponse> response;
+        try {
+            response = restClient.get()
+                    .uri(urlBase + "/api/v1/transactions/" + transactionId + "/verify")
+                    .header("Accept", MediaType.APPLICATION_JSON_VALUE)
+                    .header("x-api-key", apiKey)
+                    .retrieve()
+                    .toEntity(StereumCreateChargeResponse.class);
+        } catch (Exception e) {
+            log.error("Exception al verificar cargo en Stereum. ", e);
+            throw e;
+        }
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            log.error("Se genero error al verificar: {}", response.getStatusCode().value());
+            throw new Exception("Se genero error al verificar el cargo");
+        }
+
+        log.info("Cargo verificado en Stereum OK");
         return response.getBody();
     }
 

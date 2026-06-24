@@ -1,5 +1,6 @@
 package com.upb.ecommerce.core.integracion;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,13 +15,25 @@ import lombok.Setter;
  * <p>Los campos en snake_case usan {@code @JsonProperty} para serializar igual que
  * la documentacion. {@code idempotency_key} debe ser un UUID v4 unico por cobro;
  * si se deja null, {@code StereumService} lo genera automaticamente.
+ *
+ * <p>{@code @JsonInclude(NON_NULL)} hace que los campos nulos (p.ej. {@code callback})
+ * no se serialicen, para que el body salga igual al request validado por Stereum.
  */
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class StereumCreateChargeRequest {
+
+    /**
+     * Identificador de la cuenta de cobro en Stereum (la que provee el administrador
+     * de la pasarela). Indica a que cuenta se acreditan los pagos del QR. Si se deja
+     * null, {@code StereumService} lo completa con {@code stereum.account-id}.
+     */
+    @JsonProperty("account_id")
+    private String accountId;
 
     /** Codigo ISO del pais desde donde se invoca el API. Ej: "BO". */
     private String country;
