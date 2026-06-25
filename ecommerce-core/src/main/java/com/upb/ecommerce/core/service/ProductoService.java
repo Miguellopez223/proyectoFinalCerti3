@@ -225,7 +225,7 @@ public class ProductoService {
         request.setStockMinimo(parseOptionalInteger(firstOptional(values, index, "stockminimo", "minimo"), "stockMinimo"));
         request.setImagenUrl(firstOptional(values, index, "imagenurl", "imagen", "urlimagen"));
         request.setCategoriaId(resolveCategoriaId(tienda, values, index));
-        request.setUnidadMedidaId(resolveUnidadMedidaId(tiendaId, values, index));
+        request.setUnidadMedidaId(resolveUnidadMedidaId(tienda, values, index));
         return request;
     }
 
@@ -253,17 +253,32 @@ public class ProductoService {
         return categoriaRepository.save(categoria);
     }
 
-    private Long resolveUnidadMedidaId(Long tiendaId, List<String> values, Map<String, Integer> index) {
+    private Long resolveUnidadMedidaId(Tienda tienda, List<String> values, Map<String, Integer> index) {
         Long id = parseOptionalLong(firstOptional(values, index, "unidadmedidaid", "idunidadmedida"), "unidadMedidaId");
         if (id != null) return id;
 
         String nombre = firstOptional(values, index, "unidadmedidanombre", "unidadmedida", "unidad");
         if (!StringUtils.hasText(nombre)) return null;
-        return unidadMedidaRepository.findByTiendaIdAndEstadoTrue(tiendaId).stream()
-                .filter(u -> u.getNombre().equalsIgnoreCase(nombre.trim()))
+
+        String nombreNormalizado = nombre.trim();
+        String abreviatura = firstOptional(values, index, "unidadmedidaabreviatura", "abreviatura", "abrev");
+        return unidadMedidaRepository.findByTiendaIdAndEstadoTrue(tienda.getId()).stream()
+                .filter(u -> u.getNombre().equalsIgnoreCase(nombreNormalizado))
                 .findFirst()
                 .map(UnidadMedida::getId)
-                .orElseThrow(() -> new OperationException("No existe la unidad de medida '" + nombre + "'. Usa unidadMedidaId o crea la unidad primero."));
+                // Si la unidad de medida no existe en la tienda, se crea automaticamente durante la importacion.
+                .orElseGet(() -> crearUnidadMedida(tienda, nombreNormalizado, abreviatura).getId());
+    }
+
+    private UnidadMedida crearUnidadMedida(Tienda tienda, String nombre, String abreviatura) {
+        UnidadMedida unidad = new UnidadMedida();
+        unidad.setTienda(tienda);
+        unidad.setNombre(nombre);
+        if (StringUtils.hasText(abreviatura)) {
+            unidad.setAbreviatura(abreviatura.trim());
+        }
+        unidad.setEstado(true);
+        return unidadMedidaRepository.save(unidad);
     }
 
     private char detectDelimiter(String headerLine) {
