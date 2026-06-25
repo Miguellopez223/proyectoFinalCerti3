@@ -180,7 +180,7 @@ export interface Usuario {
   estado: boolean;
 }
 export interface UsuarioRequest {
-  tiendaId: number;
+  tiendaId?: number;
   nombre: string;
   email: string;
   password: string;

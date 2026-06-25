@@ -56,8 +56,7 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponse registrar(UsuarioRequest request) {
-        Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+        Tienda tienda = resolveTiendaRegistro(request.getTiendaId());
 
         if (usuarioRepository.findByEmailAndTiendaId(request.getEmail(), tienda.getId()).isPresent()) {
             throw new OperationException("Ya existe un usuario con ese email en esta tienda");
@@ -85,8 +84,7 @@ public class UsuarioService {
     @CacheEvict(value = "catalogo", allEntries = true)
     @Transactional
     public UsuarioResponse crearPorAdmin(UsuarioRequest request) {
-        Tienda tienda = tiendaRepository.findById(request.getTiendaId())
-                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+        Tienda tienda = resolveTiendaRequerida(request.getTiendaId());
 
         if (usuarioRepository.findByEmailAndTiendaId(request.getEmail(), tienda.getId()).isPresent()) {
             throw new OperationException("Ya existe un usuario con ese email en esta tienda");
@@ -101,6 +99,23 @@ public class UsuarioService {
         usuario.setNumeroWhatsapp(request.getNumeroWhatsapp());
         usuario.setVisibleCatalogo(Boolean.TRUE.equals(request.getVisibleCatalogo()));
         return UsuarioResponse.fromEntity(usuarioRepository.save(usuario));
+    }
+
+    private Tienda resolveTiendaRegistro(Long tiendaId) {
+        if (tiendaId != null) {
+            return resolveTiendaRequerida(tiendaId);
+        }
+        return tiendaRepository.findByEstadoTrue().stream()
+                .findFirst()
+                .orElseThrow(() -> new NotDataFoundException("No hay tiendas activas configuradas"));
+    }
+
+    private Tienda resolveTiendaRequerida(Long tiendaId) {
+        if (tiendaId == null) {
+            throw new OperationException("La tienda es obligatoria");
+        }
+        return tiendaRepository.findById(tiendaId)
+                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
     }
 
     // Refresca el usuario en cache e invalida el catalogo (pudo cambiar su WhatsApp/visibilidad).
