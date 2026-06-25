@@ -13,12 +13,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
 @Order(1)
 @AllArgsConstructor
 public class DataSeeder implements CommandLineRunner {
+    private static final String DEFAULT_ADMIN_PASSWORD = "Admin123**";
 
     private final TiendaRepository tiendaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -41,22 +43,53 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Tienda inicial creada: {}", tienda.getNombre());
         }
 
-        // Crear usuario admin solo si no existe ningún usuario
-        if (usuarioRepository.count() == 0) {
-            Tienda tienda = tiendaRepository.findBySlug("comercio1")
-                    .orElseThrow(() -> new RuntimeException("Tienda inicial no encontrada"));
+        Tienda tienda = tiendaRepository.findBySlug("comercio1")
+                .orElseThrow(() -> new RuntimeException("Tienda inicial no encontrada"));
 
-            Usuario admin = new Usuario();
-            admin.setTienda(tienda);
-            admin.setNombre("Roberto Rodriguez");
-            admin.setEmail("admin@comercio1.com");
-            admin.setPassword(passwordEncoder.encode("Admin123**"));
-            admin.setRol(RolType.ADMIN);
-            usuarioRepository.save(admin);
-            log.info("Usuario admin creado: {} | password: Admin123**", admin.getEmail());
-        }
+        ensureAdminUser(tienda, "Roberto Rodriguez", "admin@comercio1.com");
+        ensureAdminUser(tienda, "PolloBurger", "polloburger@comercio1.com");
+        ensureAdminUser(tienda, "Miguel", "miguel@comercio1.com");
+        ensureAdminUser(tienda, "Ignacio", "ignacio@comercio1.com");
+        ensureAdminUser(tienda, "Santiago", "santiago@comercio1.com");
 
         migrateLegacyPasswords();
+    }
+
+    private void ensureAdminUser(Tienda tienda, String nombre, String email) {
+        Optional<Usuario> existing = usuarioRepository.findByEmailAndTiendaId(email, tienda.getId());
+        if (existing.isPresent()) {
+            Usuario usuario = existing.get();
+            boolean changed = false;
+
+            if (!nombre.equals(usuario.getNombre())) {
+                usuario.setNombre(nombre);
+                changed = true;
+            }
+            if (usuario.getRol() != RolType.ADMIN) {
+                usuario.setRol(RolType.ADMIN);
+                changed = true;
+            }
+            if (!Boolean.TRUE.equals(usuario.getEstado())) {
+                usuario.setEstado(true);
+                changed = true;
+            }
+
+            if (changed) {
+                usuarioRepository.save(usuario);
+                log.info("Usuario admin actualizado: {}", email);
+            }
+            return;
+        }
+
+        Usuario admin = new Usuario();
+        admin.setTienda(tienda);
+        admin.setNombre(nombre);
+        admin.setEmail(email);
+        admin.setPassword(passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
+        admin.setRol(RolType.ADMIN);
+        admin.setEstado(true);
+        usuarioRepository.save(admin);
+        log.info("Usuario admin creado: {} | password: {}", admin.getEmail(), DEFAULT_ADMIN_PASSWORD);
     }
 
     private void migrateLegacyPasswords() {
@@ -71,7 +104,7 @@ public class DataSeeder implements CommandLineRunner {
         usuarios.forEach(usuario -> {
             String currentPassword = usuario.getPassword();
             if (isSeededAdminWithLegacyPassword(usuario, currentPassword)) {
-                usuario.setPassword(passwordEncoder.encode("Admin123**"));
+                usuario.setPassword(passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
             } else if (isRawBcryptHash(currentPassword)) {
                 usuario.setPassword("{bcrypt}" + currentPassword);
             } else {
