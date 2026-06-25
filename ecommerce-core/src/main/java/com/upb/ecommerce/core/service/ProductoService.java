@@ -125,7 +125,7 @@ public class ProductoService {
                 }
                 totalFilas++;
                 try {
-                    ProductoRequest request = buildRequestFromCsv(tiendaId, line, delimiter, index);
+                    ProductoRequest request = buildRequestFromCsv(tienda, line, delimiter, index);
                     if (!StringUtils.hasText(request.getSlugProducto())) {
                         request.setSlugProducto(slugify(request.getNombre()));
                     }
@@ -208,7 +208,8 @@ public class ProductoService {
                 .orElseThrow(() -> new NotDataFoundException("Unidad de medida no encontrada"));
     }
 
-    private ProductoRequest buildRequestFromCsv(Long tiendaId, String line, char delimiter, Map<String, Integer> index) {
+    private ProductoRequest buildRequestFromCsv(Tienda tienda, String line, char delimiter, Map<String, Integer> index) {
+        Long tiendaId = tienda.getId();
         List<String> values = parseCsvLine(line, delimiter);
         ProductoRequest request = new ProductoRequest();
         request.setTiendaId(tiendaId);
@@ -223,22 +224,33 @@ public class ProductoService {
         request.setStock(parseInteger(required(values, index, "stock"), "stock"));
         request.setStockMinimo(parseOptionalInteger(firstOptional(values, index, "stockminimo", "minimo"), "stockMinimo"));
         request.setImagenUrl(firstOptional(values, index, "imagenurl", "imagen", "urlimagen"));
-        request.setCategoriaId(resolveCategoriaId(tiendaId, values, index));
+        request.setCategoriaId(resolveCategoriaId(tienda, values, index));
         request.setUnidadMedidaId(resolveUnidadMedidaId(tiendaId, values, index));
         return request;
     }
 
-    private Long resolveCategoriaId(Long tiendaId, List<String> values, Map<String, Integer> index) {
+    private Long resolveCategoriaId(Tienda tienda, List<String> values, Map<String, Integer> index) {
         Long id = parseOptionalLong(firstOptional(values, index, "categoriaid", "idcategoria"), "categoriaId");
         if (id != null) return id;
 
         String nombre = firstOptional(values, index, "categorianombre", "categoria");
         if (!StringUtils.hasText(nombre)) return null;
-        return categoriaRepository.findByTiendaIdAndEstadoTrue(tiendaId).stream()
-                .filter(c -> c.getNombre().equalsIgnoreCase(nombre.trim()))
+
+        String nombreNormalizado = nombre.trim();
+        return categoriaRepository.findByTiendaIdAndEstadoTrue(tienda.getId()).stream()
+                .filter(c -> c.getNombre().equalsIgnoreCase(nombreNormalizado))
                 .findFirst()
                 .map(Categoria::getId)
-                .orElseThrow(() -> new OperationException("No existe la categoria '" + nombre + "'. Usa categoriaId o crea la categoria primero."));
+                // Si la categoria no existe en la tienda, se crea automaticamente durante la importacion.
+                .orElseGet(() -> crearCategoria(tienda, nombreNormalizado).getId());
+    }
+
+    private Categoria crearCategoria(Tienda tienda, String nombre) {
+        Categoria categoria = new Categoria();
+        categoria.setTienda(tienda);
+        categoria.setNombre(nombre);
+        categoria.setEstado(true);
+        return categoriaRepository.save(categoria);
     }
 
     private Long resolveUnidadMedidaId(Long tiendaId, List<String> values, Map<String, Integer> index) {
