@@ -230,6 +230,6 @@ function QrImage({ qr }: { qr: StereumCharge }) {
       </div>
     );
   }
-  const src = qr.qr_base64.startsWith('data:') ? qr.qr_base64 : `data:image/jpeg;base64,${qr.qr_base64}`;
+  const src = qr.qr_base64.startsWith('data:') ? qr.qr_base64 : `data:image/png;base64,${qr.qr_base64}`;
   return <img src={src} alt="QR de pago" className="h-48 w-48 rounded-xl bg-white p-2 object-contain ring-1 ring-white/10" />;
 }
