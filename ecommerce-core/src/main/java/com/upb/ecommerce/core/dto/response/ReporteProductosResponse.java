@@ -19,5 +19,9 @@ public class ReporteProductosResponse {
     private List<ProductoResponse> productosMuertos;
     private BigDecimal valorizacionCosto;
     private BigDecimal valorizacionVenta;
+    /** Cantidad de SKUs (productos activos distintos) de la tienda. */
+    private long totalSkus;
     private List<ProductoResponse> stockCritico;
+    /** Índice de rotación y cobertura (en días) por producto, sobre ventas de los últimos 30 días. */
+    private List<RotacionResponse> rotacion;
 }

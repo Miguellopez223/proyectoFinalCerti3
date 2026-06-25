@@ -307,9 +307,12 @@ export interface MovimientoInventario {
   productoId: number;
   productoNombre: string;
   usuarioId?: number | null;
+  usuarioNombre?: string | null;
   tipo: TipoMovimiento | string;
   cantidad: number;
   referencia?: string;
+  proveedor?: string | null;
+  precioUnitario?: number | null;
   fecha: string; // LocalDateTime ISO
 }
 export interface MovimientoInventarioRequest {
@@ -319,6 +322,8 @@ export interface MovimientoInventarioRequest {
   tipo: TipoMovimiento;
   cantidad: number;
   referencia?: string;
+  proveedor?: string;
+  precioUnitario?: number;
 }
 
 // --- Dashboard -------------------------------------------------------------
@@ -343,6 +348,7 @@ export interface ReporteAnalitico {
   ventasPorDia: SerieItem[];
   ventasPorCategoria: SerieItem[];
   ventasPorHora: SerieItem[];
+  ventasPorDiaSemana: SerieItem[];
   ingresosSemanaActual: number;
   ingresosSemanaAnterior: number;
   variacionPorcentaje: number;
@@ -354,6 +360,13 @@ export interface ReporteVentas {
   utilidadBruta: number;
   ticketPromedio: number;
   margenPorcentaje: number;
+  unidadesVendidas: number;
+  unidadesPorVenta: number;
+  ventasAnuladasCantidad: number;
+  montoAnulado: number;
+  ingresosMesActual: number;
+  ingresosMesAnterior: number;
+  variacionMensual: number;
   porMetodoPago: SerieItem[];
 }
 export interface ProductoRanking {
@@ -362,19 +375,68 @@ export interface ProductoRanking {
   cantidadVendida: number;
   ingresos: number;
 }
+export interface RotacionItem {
+  productoId: number;
+  nombre: string;
+  stock: number;
+  vendidos30: number;
+  rotacion: number | null;
+  coberturaDias: number | null;
+}
 export interface ReporteProductos {
   masVendidos: ProductoRanking[];
   productosMuertos: Producto[];
   valorizacionCosto: number;
   valorizacionVenta: number;
+  totalSkus: number;
   stockCritico: Producto[];
+  rotacion: RotacionItem[];
+}
+export interface RentabilidadProducto {
+  id: number | null;
+  nombre: string;
+  ingresos: number;
+  utilidad: number;
+  margenPorcentaje: number;
+}
+export interface AbcItem {
+  productoId: number;
+  nombre: string;
+  ingresos: number;
+  porcentaje: number;
+  porcentajeAcumulado: number;
+  clase: 'A' | 'B' | 'C';
+}
+export interface ReporteRentabilidad {
+  claseA: number;
+  claseB: number;
+  claseC: number;
+  productosRentables: RentabilidadProducto[];
+  porCategoria: RentabilidadProducto[];
+  abc: AbcItem[];
 }
 export interface ReporteCliente {
   usuarioId: number;
   nombre: string;
   email: string;
+  telefono?: string | null;
   cantidadCompras: number;
   totalGastado: number;
+  ultimaCompra?: string | null;
+}
+export interface ReporteClientes {
+  totalClientes: number;
+  recurrentes: number;
+  unaCompra: number;
+  inactivos: number;
+  topClientes: ReporteCliente[];
+  clientesInactivos: ReporteCliente[];
+}
+export interface ProveedorCompra {
+  proveedor: string;
+  numEntradas: number;
+  unidades: number;
+  costoTotal: number;
 }
 
 // --- Catálogo público ------------------------------------------------------

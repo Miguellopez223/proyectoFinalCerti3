@@ -14,12 +14,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Reportes analíticos de la tienda (5 pestañas). Solo accesibles por ADMIN.
+ * Reportes analíticos de la tienda (7 pestañas). Solo accesibles por ADMIN.
  *
  * <p>Los parámetros {@code desde}/{@code hasta} son fechas ISO (yyyy-MM-dd) opcionales;
  * por defecto se reportan los últimos 30 días.
  */
-@Tag(name = "Reportes", description = "Reportes analíticos de la tienda (analítico, ventas, productos, clientes, movimientos). Solo ADMIN")
+@Tag(name = "Reportes", description = "Reportes analíticos de la tienda (analítico, ventas, productos, rentabilidad/ABC, clientes, proveedores, movimientos). Solo ADMIN")
 @SecurityRequirement(name = "bearerToken")
 @RestController
 @RequestMapping("/api/reportes/tienda/{tiendaId}")
@@ -62,13 +62,35 @@ public class ReporteController {
         return ResponseEntity.ok(reporteService.productos(tiendaId, desde, hasta, diasSinMovimiento));
     }
 
-    @Operation(summary = "Reporte de clientes del periodo")
-    @GetMapping("/clientes")
-    public ResponseEntity<List<ReporteClienteResponse>> clientes(
+    @Operation(summary = "Reporte de rentabilidad y clasificación ABC",
+            description = "Productos/categorías más rentables y análisis de Pareto (A≤80%, B≤95%, C resto) del periodo.")
+    @GetMapping("/rentabilidad")
+    public ResponseEntity<ReporteRentabilidadResponse> rentabilidad(
             @PathVariable Long tiendaId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        return ResponseEntity.ok(reporteService.clientes(tiendaId, desde, hasta));
+        return ResponseEntity.ok(reporteService.rentabilidad(tiendaId, desde, hasta));
+    }
+
+    @Operation(summary = "Reporte de clientes del periodo",
+            description = "KPIs de cartera, top 10 del periodo y clientes inactivos. diasInactividad define el umbral (por defecto 30).")
+    @GetMapping("/clientes")
+    public ResponseEntity<ReporteClientesResponse> clientes(
+            @PathVariable Long tiendaId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "30") int diasInactividad) {
+        return ResponseEntity.ok(reporteService.clientes(tiendaId, desde, hasta, diasInactividad));
+    }
+
+    @Operation(summary = "Reporte de compras por proveedor",
+            description = "Agrega las entradas de inventario con proveedor en el periodo: nº entradas, unidades y costo total.")
+    @GetMapping("/proveedores")
+    public ResponseEntity<List<ProveedorCompraResponse>> proveedores(
+            @PathVariable Long tiendaId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return ResponseEntity.ok(reporteService.proveedores(tiendaId, desde, hasta));
     }
 
     @Operation(summary = "Reporte de movimientos de inventario",

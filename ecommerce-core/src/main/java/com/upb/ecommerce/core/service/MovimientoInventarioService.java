@@ -73,6 +73,12 @@ public class MovimientoInventarioService {
         movimiento.setCantidad(request.getCantidad());
         movimiento.setReferencia(request.getReferencia());
 
+        // Datos de compra: solo tienen sentido en una ENTRADA (compra a proveedor).
+        if (request.getTipo().equals("ENTRADA")) {
+            movimiento.setProveedor(request.getProveedor());
+            movimiento.setPrecioUnitario(request.getPrecioUnitario());
+        }
+
         if (request.getUsuarioId() != null) {
             Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
                     .orElseThrow(() -> new NotDataFoundException("Usuario no encontrado"));

@@ -27,7 +27,14 @@ export default function InventarioPage() {
 
   const [open, setOpen] = useState(false);
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [form, setForm] = useState({ productoId: '', tipo: 'ENTRADA' as TipoMovimiento, cantidad: '', referencia: '' });
+  const [form, setForm] = useState({
+    productoId: '',
+    tipo: 'ENTRADA' as TipoMovimiento,
+    cantidad: '',
+    referencia: '',
+    proveedor: '',
+    precioUnitario: '',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,7 +44,7 @@ export default function InventarioPage() {
   }, [open, tiendaId]);
 
   function openCreate() {
-    setForm({ productoId: '', tipo: 'ENTRADA', cantidad: '', referencia: '' });
+    setForm({ productoId: '', tipo: 'ENTRADA', cantidad: '', referencia: '', proveedor: '', precioUnitario: '' });
     setErrors({});
     setOpen(true);
   }
@@ -56,6 +63,7 @@ export default function InventarioPage() {
     if (!validate()) return;
     setSubmitting(true);
     try {
+      const esEntrada = form.tipo === 'ENTRADA';
       await inventarioApi.registrar({
         tiendaId,
         productoId: Number(form.productoId),
@@ -63,6 +71,8 @@ export default function InventarioPage() {
         tipo: form.tipo,
         cantidad: Number(form.cantidad),
         referencia: form.referencia.trim() || undefined,
+        proveedor: esEntrada && form.proveedor.trim() ? form.proveedor.trim() : undefined,
+        precioUnitario: esEntrada && form.precioUnitario ? Number(form.precioUnitario) : undefined,
       });
       toast.success('Movimiento registrado.');
       setOpen(false);
@@ -166,6 +176,25 @@ export default function InventarioPage() {
             <Input label="Cantidad" type="number" min="1" value={form.cantidad} onChange={(e) => setForm((f) => ({ ...f, cantidad: e.target.value }))} error={errors.cantidad} required />
           </div>
           <Input label="Referencia" value={form.referencia} onChange={(e) => setForm((f) => ({ ...f, referencia: e.target.value }))} placeholder="Ajuste, compra a proveedor…" />
+          {form.tipo === 'ENTRADA' && (
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Proveedor"
+                value={form.proveedor}
+                onChange={(e) => setForm((f) => ({ ...f, proveedor: e.target.value }))}
+                placeholder="Opcional"
+              />
+              <Input
+                label="Precio de costo unitario"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.precioUnitario}
+                onChange={(e) => setForm((f) => ({ ...f, precioUnitario: e.target.value }))}
+                placeholder="Opcional"
+              />
+            </div>
+          )}
         </form>
       </Modal>
     </>

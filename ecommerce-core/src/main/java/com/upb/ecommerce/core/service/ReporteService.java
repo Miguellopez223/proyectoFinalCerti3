@@ -9,6 +9,7 @@ import com.upb.ecommerce.domain.entities.DetallePedido;
 import com.upb.ecommerce.domain.entities.Pago;
 import com.upb.ecommerce.domain.entities.Pedido;
 import com.upb.ecommerce.domain.entities.Producto;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,17 +22,19 @@ import java.time.LocalTime;
 import java.util.*;
 
 /**
- * Reportes analíticos del ADMIN (5 pestañas). Todas las agregaciones se calculan en memoria
+ * Reportes analíticos del ADMIN (7 pestañas). Todas las agregaciones se calculan en memoria
  * a partir de pedidos completados traídos con fetch-join, evitando JPQL dependiente del
  * dialecto y problemas de lazy-loading.
  *
  * <p>Una "venta completada" es un pedido en estado PAGADO/PREPARANDO/ENVIADO/ENTREGADO
- * (ver {@link DashboardService#ESTADOS_COMPLETADOS}).
+ * (ver {@link DashboardService#ESTADOS_COMPLETADOS}); las "anuladas" son los CANCELADO.
  */
 @Service
 public class ReporteService {
 
     private static final List<String> ESTADOS = DashboardService.ESTADOS_COMPLETADOS;
+    private static final List<String> ANULADAS = List.of("CANCELADO");
+    private static final String[] DIAS_SEMANA = {"Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"};
 
     private final PedidoRepository pedidoRepository;
     private final ProductoRepository productoRepository;
@@ -60,6 +63,7 @@ public class ReporteService {
         dto.setVentasPorDia(agruparPorDia(ventas));
         dto.setVentasPorCategoria(agruparPorCategoria(ventas));
         dto.setVentasPorHora(agruparPorHora(ventas));
+        dto.setVentasPorDiaSemana(agruparPorDiaSemana(ventas));
 
         // Comparativa semana actual vs. anterior (lunes a hoy).
         LocalDateTime inicioActual = LocalDate.now().with(DayOfWeek.MONDAY).atStartOfDay();
@@ -109,6 +113,24 @@ public class ReporteService {
         return serie;
     }
 
+    /** Heatmap por día de la semana: 7 buckets fijos Dom..Sáb. */
+    private List<SerieItemResponse> agruparPorDiaSemana(List<Pedido> ventas) {
+        long[] cantidad = new long[7];
+        BigDecimal[] ingresos = new BigDecimal[7];
+        for (int i = 0; i < 7; i++) ingresos[i] = BigDecimal.ZERO;
+        for (Pedido p : ventas) {
+            if (p.getFechaCreacion() == null) continue;
+            int idx = p.getFechaCreacion().getDayOfWeek().getValue() % 7; // SUN(7)→0 .. SAT(6)→6
+            cantidad[idx]++;
+            ingresos[idx] = ingresos[idx].add(nz(p.getTotal()));
+        }
+        List<SerieItemResponse> serie = new ArrayList<>(7);
+        for (int i = 0; i < 7; i++) {
+            serie.add(new SerieItemResponse(DIAS_SEMANA[i], cantidad[i], ingresos[i]));
+        }
+        return serie;
+    }
+
     private List<SerieItemResponse> agruparPorCategoria(List<Pedido> ventas) {
         Map<String, long[]> cantidad = new LinkedHashMap<>();
         Map<String, BigDecimal> ingresos = new LinkedHashMap<>();
@@ -128,7 +150,7 @@ public class ReporteService {
         return serie;
     }
 
-    // ── Pestaña 2: Ventas ────────────────────────────────────────────────────────
+    // ── Pestaña 2: Rendimiento de ventas ─────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public ReporteVentasResponse ventas(Long tiendaId, LocalDate desde, LocalDate hasta) {
@@ -138,9 +160,11 @@ public class ReporteService {
 
         BigDecimal ingresosBrutos = BigDecimal.ZERO;
         BigDecimal costoVentas = BigDecimal.ZERO;
+        long unidades = 0;
         for (Pedido p : ventas) {
             ingresosBrutos = ingresosBrutos.add(nz(p.getTotal()));
             for (DetallePedido d : detalles(p)) {
+                unidades += d.getCantidad();
                 BigDecimal costoUnit = d.getProducto() != null ? nz(d.getProducto().getPrecioCosto()) : BigDecimal.ZERO;
                 costoVentas = costoVentas.add(costoUnit.multiply(BigDecimal.valueOf(d.getCantidad())));
             }
@@ -157,6 +181,28 @@ public class ReporteService {
                 : ingresosBrutos.divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP));
         dto.setMargenPorcentaje(porcentaje(utilidad, ingresosBrutos));
 
+        // KPIs secundarios.
+        dto.setUnidadesVendidas(unidades);
+        dto.setUnidadesPorVenta(total == 0 ? BigDecimal.ZERO
+                : BigDecimal.valueOf(unidades).divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP));
+
+        List<Pedido> anuladas = pedidoRepository.findVentasEntre(tiendaId, ANULADAS, ini, fin);
+        BigDecimal montoAnulado = BigDecimal.ZERO;
+        for (Pedido p : anuladas) montoAnulado = montoAnulado.add(nz(p.getTotal()));
+        dto.setVentasAnuladasCantidad(anuladas.size());
+        dto.setMontoAnulado(montoAnulado);
+
+        // Comparativa mensual (independiente del rango seleccionado).
+        LocalDateTime inicioMes = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime inicioMesAnt = inicioMes.minusMonths(1);
+        LocalDateTime finMesAnt = inicioMes.minusSeconds(1);
+        BigDecimal mesActual = nz(pedidoRepository.sumIngresos(tiendaId, ESTADOS, inicioMes, ahora));
+        BigDecimal mesAnterior = nz(pedidoRepository.sumIngresos(tiendaId, ESTADOS, inicioMesAnt, finMesAnt));
+        dto.setIngresosMesActual(mesActual);
+        dto.setIngresosMesAnterior(mesAnterior);
+        dto.setVariacionMensual(variacion(mesActual, mesAnterior));
+
         // Desglose por método de pago (pagos exitosos del rango).
         Map<String, long[]> cantidad = new LinkedHashMap<>();
         Map<String, BigDecimal> montos = new LinkedHashMap<>();
@@ -171,37 +217,25 @@ public class ReporteService {
         return dto;
     }
 
-    // ── Pestaña 3: Productos ─────────────────────────────────────────────────────
+    // ── Pestaña 3: Inteligencia de productos ─────────────────────────────────────
 
     @Transactional(readOnly = true)
     public ReporteProductosResponse productos(Long tiendaId, LocalDate desde, LocalDate hasta,
                                               int diasSinMovimiento) {
         LocalDateTime ini = inicio(desde);
         LocalDateTime fin = fin(hasta);
-        List<Pedido> ventas = pedidoRepository.findCompletadasConDetalle(tiendaId, ESTADOS, ini, fin);
-
-        // Ranking de más vendidos (top 10) en el rango.
-        Map<Long, long[]> unidades = new LinkedHashMap<>();
-        Map<Long, BigDecimal> ingresos = new LinkedHashMap<>();
-        Map<Long, String> nombres = new LinkedHashMap<>();
-        for (Pedido p : ventas) {
-            for (DetallePedido d : detalles(p)) {
-                if (d.getProducto() == null) continue;
-                Long id = d.getProducto().getId();
-                nombres.putIfAbsent(id, d.getProducto().getNombre());
-                unidades.computeIfAbsent(id, k -> new long[1])[0] += d.getCantidad();
-                ingresos.merge(id, subtotal(d), BigDecimal::add);
-            }
-        }
-        List<ProductoRankingResponse> masVendidos = new ArrayList<>();
-        unidades.forEach((id, u) -> masVendidos.add(
-                new ProductoRankingResponse(id, nombres.get(id), u[0], ingresos.get(id))));
-        masVendidos.sort(Comparator.comparingLong(ProductoRankingResponse::getCantidadVendida).reversed());
 
         ReporteProductosResponse dto = new ReporteProductosResponse();
-        dto.setMasVendidos(masVendidos.size() > 10 ? masVendidos.subList(0, 10) : masVendidos);
 
-        // Valorización del inventario y stock crítico (punto en el tiempo, no por rango).
+        // Ranking histórico de más vendidos (todo el tiempo), top 10.
+        List<ProductoRankingResponse> masVendidos = new ArrayList<>();
+        for (Object[] fila : pedidoRepository.topProductosHistorico(tiendaId, ESTADOS, PageRequest.of(0, 10))) {
+            masVendidos.add(new ProductoRankingResponse(
+                    (Long) fila[0], (String) fila[1], ((Number) fila[2]).longValue(), nz((BigDecimal) fila[3])));
+        }
+        dto.setMasVendidos(masVendidos);
+
+        // Valorización del inventario y total de SKUs (punto en el tiempo).
         List<Producto> activos = productoRepository.findByTiendaIdAndEstadoTrue(tiendaId);
         BigDecimal valCosto = BigDecimal.ZERO;
         BigDecimal valVenta = BigDecimal.ZERO;
@@ -212,6 +246,7 @@ public class ReporteService {
         }
         dto.setValorizacionCosto(valCosto);
         dto.setValorizacionVenta(valVenta);
+        dto.setTotalSkus(activos.size());
         dto.setStockCritico(productoRepository.findStockCritico(tiendaId)
                 .stream().map(ProductoResponse::fromEntity).toList());
 
@@ -229,34 +264,179 @@ public class ReporteService {
             }
         }
         dto.setProductosMuertos(muertos);
+
+        // Rotación y cobertura: unidades vendidas en los últimos 30 días vs. stock actual.
+        Map<Long, Long> vendidos30 = new HashMap<>();
+        LocalDateTime hace30 = LocalDateTime.now().minusDays(30);
+        for (Pedido p : pedidoRepository.findCompletadasConDetalle(tiendaId, ESTADOS, hace30, LocalDateTime.now())) {
+            for (DetallePedido d : detalles(p)) {
+                if (d.getProducto() == null) continue;
+                vendidos30.merge(d.getProducto().getId(), (long) d.getCantidad(), Long::sum);
+            }
+        }
+        List<RotacionResponse> rotacion = new ArrayList<>();
+        for (Producto p : activos) {
+            long v = vendidos30.getOrDefault(p.getId(), 0L);
+            if (v == 0) continue; // sin rotación → ya aparece como producto "muerto"
+            int stock = p.getStock();
+            BigDecimal rot = stock > 0
+                    ? BigDecimal.valueOf(v).divide(BigDecimal.valueOf(stock), 2, RoundingMode.HALF_UP)
+                    : null; // stock 0 con ventas → rotación "infinita"
+            // cobertura (días) = stock / (vendidos30 / 30) = stock * 30 / vendidos30
+            BigDecimal cobertura = BigDecimal.valueOf((long) stock * 30)
+                    .divide(BigDecimal.valueOf(v), 1, RoundingMode.HALF_UP);
+            rotacion.add(new RotacionResponse(p.getId(), p.getNombre(), stock, v, rot, cobertura));
+        }
+        // Más urgentes primero (menor cobertura).
+        rotacion.sort(Comparator.comparing(RotacionResponse::getCoberturaDias));
+        dto.setRotacion(rotacion);
         return dto;
     }
 
-    // ── Pestaña 4: Clientes (reemplaza "Vendedores") ─────────────────────────────
+    // ── Pestaña 4: Rentabilidad / ABC ────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ReporteClienteResponse> clientes(Long tiendaId, LocalDate desde, LocalDate hasta) {
+    public ReporteRentabilidadResponse rentabilidad(Long tiendaId, LocalDate desde, LocalDate hasta) {
         List<Pedido> ventas = pedidoRepository.findCompletadasConDetalle(
                 tiendaId, ESTADOS, inicio(desde), fin(hasta));
 
+        // Agregación por producto y por categoría.
+        Map<Long, String> nombres = new LinkedHashMap<>();
+        Map<Long, BigDecimal> ingProd = new LinkedHashMap<>();
+        Map<Long, BigDecimal> costoProd = new LinkedHashMap<>();
+        Map<String, BigDecimal> ingCat = new LinkedHashMap<>();
+        Map<String, BigDecimal> costoCat = new LinkedHashMap<>();
+        for (Pedido p : ventas) {
+            for (DetallePedido d : detalles(p)) {
+                Producto pr = d.getProducto();
+                if (pr == null) continue;
+                BigDecimal ingreso = subtotal(d);
+                BigDecimal costo = nz(pr.getPrecioCosto()).multiply(BigDecimal.valueOf(d.getCantidad()));
+                nombres.putIfAbsent(pr.getId(), pr.getNombre());
+                ingProd.merge(pr.getId(), ingreso, BigDecimal::add);
+                costoProd.merge(pr.getId(), costo, BigDecimal::add);
+                String cat = pr.getCategoria() != null ? pr.getCategoria().getNombre() : "Sin categoría";
+                ingCat.merge(cat, ingreso, BigDecimal::add);
+                costoCat.merge(cat, costo, BigDecimal::add);
+            }
+        }
+
+        ReporteRentabilidadResponse dto = new ReporteRentabilidadResponse();
+
+        // Productos más rentables (por utilidad descendente).
+        List<RentabilidadProductoResponse> rentables = new ArrayList<>();
+        ingProd.forEach((id, ing) -> {
+            BigDecimal utilidad = ing.subtract(costoProd.get(id));
+            rentables.add(new RentabilidadProductoResponse(
+                    id, nombres.get(id), ing, utilidad, porcentaje(utilidad, ing)));
+        });
+        rentables.sort(Comparator.comparing(RentabilidadProductoResponse::getUtilidad).reversed());
+        dto.setProductosRentables(rentables);
+
+        // Rentabilidad por categoría.
+        List<RentabilidadProductoResponse> porCategoria = new ArrayList<>();
+        ingCat.forEach((cat, ing) -> {
+            BigDecimal utilidad = ing.subtract(costoCat.get(cat));
+            porCategoria.add(new RentabilidadProductoResponse(
+                    null, cat, ing, utilidad, porcentaje(utilidad, ing)));
+        });
+        porCategoria.sort(Comparator.comparing(RentabilidadProductoResponse::getUtilidad).reversed());
+        dto.setPorCategoria(porCategoria);
+
+        // Clasificación ABC (Pareto): ordenar por ingresos desc, acumular %.
+        List<Map.Entry<Long, BigDecimal>> ordenado = new ArrayList<>(ingProd.entrySet());
+        ordenado.sort(Map.Entry.<Long, BigDecimal>comparingByValue().reversed());
+        BigDecimal totalIngresos = ordenado.stream()
+                .map(Map.Entry::getValue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<AbcItemResponse> abc = new ArrayList<>();
+        BigDecimal acumulado = BigDecimal.ZERO;
+        long a = 0, b = 0, c = 0;
+        for (Map.Entry<Long, BigDecimal> e : ordenado) {
+            BigDecimal pct = porcentaje(e.getValue(), totalIngresos);
+            acumulado = acumulado.add(e.getValue());
+            BigDecimal pctAcum = porcentaje(acumulado, totalIngresos);
+            String clase;
+            if (pctAcum.compareTo(BigDecimal.valueOf(80)) <= 0) { clase = "A"; a++; }
+            else if (pctAcum.compareTo(BigDecimal.valueOf(95)) <= 0) { clase = "B"; b++; }
+            else { clase = "C"; c++; }
+            abc.add(new AbcItemResponse(e.getKey(), nombres.get(e.getKey()), e.getValue(), pct, pctAcum, clase));
+        }
+        dto.setAbc(abc);
+        dto.setClaseA(a);
+        dto.setClaseB(b);
+        dto.setClaseC(c);
+        return dto;
+    }
+
+    // ── Pestaña 5: Clientes ──────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public ReporteClientesResponse clientes(Long tiendaId, LocalDate desde, LocalDate hasta,
+                                            int diasInactividad) {
+        ReporteClientesResponse dto = new ReporteClientesResponse();
+
+        // Histórico por cliente: KPIs e inactivos.
+        long recurrentes = 0, unaCompra = 0;
+        LocalDateTime limite = LocalDateTime.now().minusDays(diasInactividad);
+        List<ReporteClienteResponse> inactivos = new ArrayList<>();
+        List<Object[]> historico = pedidoRepository.comprasPorClienteHistorico(tiendaId, ESTADOS);
+        for (Object[] f : historico) {
+            long compras = ((Number) f[4]).longValue();
+            if (compras > 1) recurrentes++; else unaCompra++;
+            LocalDateTime ultima = (LocalDateTime) f[6];
+            if (ultima != null && ultima.isBefore(limite)) {
+                inactivos.add(new ReporteClienteResponse(
+                        (Long) f[0], (String) f[1], (String) f[2], (String) f[3],
+                        compras, nz((BigDecimal) f[5]), ultima));
+            }
+        }
+        inactivos.sort(Comparator.comparing(ReporteClienteResponse::getUltimaCompra));
+        dto.setTotalClientes(historico.size());
+        dto.setRecurrentes(recurrentes);
+        dto.setUnaCompra(unaCompra);
+        dto.setInactivos(inactivos.size());
+        dto.setClientesInactivos(inactivos);
+
+        // Top 10 mejores clientes del período seleccionado.
+        List<Pedido> ventas = pedidoRepository.findCompletadasConDetalle(
+                tiendaId, ESTADOS, inicio(desde), fin(hasta));
         Map<Long, long[]> compras = new LinkedHashMap<>();
         Map<Long, BigDecimal> gastado = new LinkedHashMap<>();
-        Map<Long, String[]> datos = new LinkedHashMap<>();  // [nombre, email]
+        Map<Long, String[]> datos = new LinkedHashMap<>();  // [nombre, email, telefono]
         for (Pedido p : ventas) {
             if (p.getUsuario() == null) continue;
             Long id = p.getUsuario().getId();
-            datos.putIfAbsent(id, new String[]{p.getUsuario().getNombre(), p.getUsuario().getEmail()});
+            datos.putIfAbsent(id, new String[]{
+                    p.getUsuario().getNombre(), p.getUsuario().getEmail(), p.getUsuario().getNumeroWhatsapp()});
             compras.computeIfAbsent(id, k -> new long[1])[0]++;
             gastado.merge(id, nz(p.getTotal()), BigDecimal::add);
         }
         List<ReporteClienteResponse> ranking = new ArrayList<>();
-        compras.forEach((id, c) -> ranking.add(new ReporteClienteResponse(
-                id, datos.get(id)[0], datos.get(id)[1], c[0], gastado.get(id))));
+        compras.forEach((id, cnt) -> ranking.add(new ReporteClienteResponse(
+                id, datos.get(id)[0], datos.get(id)[1], datos.get(id)[2], cnt[0], gastado.get(id), null)));
         ranking.sort(Comparator.comparing(ReporteClienteResponse::getTotalGastado).reversed());
-        return ranking;
+        dto.setTopClientes(ranking.size() > 10 ? ranking.subList(0, 10) : ranking);
+        return dto;
     }
 
-    // ── Pestaña 5: Movimientos ───────────────────────────────────────────────────
+    // ── Pestaña 6: Proveedores ───────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<ProveedorCompraResponse> proveedores(Long tiendaId, LocalDate desde, LocalDate hasta) {
+        LocalDateTime ini = desde != null ? desde.atStartOfDay() : null;
+        LocalDateTime fin = hasta != null ? hasta.atTime(LocalTime.MAX) : null;
+        List<ProveedorCompraResponse> lista = new ArrayList<>();
+        for (Object[] f : movimientoRepository.comprasPorProveedor(tiendaId, ini, fin)) {
+            lista.add(new ProveedorCompraResponse(
+                    (String) f[0],
+                    ((Number) f[1]).longValue(),
+                    ((Number) f[2]).longValue(),
+                    nz((BigDecimal) f[3])));
+        }
+        return lista;
+    }
+
+    // ── Pestaña 7: Movimientos ───────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<MovimientoInventarioResponse> movimientos(Long tiendaId, String tipo, Long usuarioId,

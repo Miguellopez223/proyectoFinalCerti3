@@ -3,7 +3,10 @@ package com.upb.ecommerce.core.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
+
+import java.math.BigDecimal;
 
 @Data
 public class MovimientoInventarioRequest {
@@ -26,4 +29,11 @@ public class MovimientoInventarioRequest {
     private Integer cantidad;
 
     private String referencia;
+
+    /** Proveedor de la compra (opcional; relevante en ENTRADA). */
+    private String proveedor;
+
+    /** Costo unitario de la compra (opcional; relevante en ENTRADA). */
+    @PositiveOrZero
+    private BigDecimal precioUnitario;
 }
