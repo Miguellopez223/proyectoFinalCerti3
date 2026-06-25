@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Terraform ###
+**/.terraform/
+*.tfstate
+*.tfstate.*
+
+### Python ###
+__pycache__/
+*.py[cod]
