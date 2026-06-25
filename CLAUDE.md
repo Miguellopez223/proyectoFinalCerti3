@@ -45,7 +45,7 @@ No backend dev proxy is configured in `vite.config.ts` — the frontend calls th
 
 - **ecommerce-domain** — JPA entities only. No business logic.
 - **ecommerce-data** — Spring Data repositories + `DataSeeder` (CommandLineRunner, `@Order(1)`, runs every startup). Depends on `ecommerce-domain`.
-- **ecommerce-core** — Services, DTOs, email (JavaMailSender + Thymeleaf templates), validation. Depends on `ecommerce-data`. Caffeine cache config exists but `@EnableCaching` is not turned on yet.
+- **ecommerce-core** — Services, DTOs, email (JavaMailSender + Thymeleaf templates), validation. Depends on `ecommerce-data`. Caffeine caching is **on** (`@EnableCaching` in `EcommerceApplication`): `UsuarioService`/`ProductoService`/`CatalogoService` are `@Cacheable` over the `usuarios`/`productos`/`catalogo` caches, and mutating methods `@CacheEvict` them — note the broad `@CacheEvict(value="catalogo", allEntries=true)` on most writes. SpEL cache keys (e.g. `key="#id"`) rely on the `-parameters` compile flag set in the root `pom.xml`; don't remove it.
 - **ecommerce-api** — REST controllers, Spring Security/JWT, Quartz jobs, AWS S3 uploads, OpenAPI/Swagger, Actuator. Depends on `ecommerce-core`.
 
 When changing a domain concept, expect to touch all four modules top-to-bottom (entity → repository/seeder → service/DTO → controller).
@@ -54,12 +54,12 @@ When changing a domain concept, expect to touch all four modules top-to-bottom (
 
 - Stateless JWT auth (`io.jsonwebtoken`, `JwtTokenProvider` + `JwtTokenFilter`), ~8h expiry.
 - Google OAuth login via `GoogleTokenVerifier`.
-- Public (no-JWT) routes: `/api/auth`, `/api/usuarios/registrar`, `/api/tiendas` (listing), `/api/marketplace/**`, `/api/catalogo/**`, the Stereum webhook (`/api/webhooks/stereum/outbound`, HMAC-verified — do not relax this), Swagger, `/actuator/health`. Everything else requires a Bearer token; method-level role checks use `@EnableMethodSecurity`.
+- Public (no-JWT) routes: `/api/auth`, `/api/usuarios/registrar`, `/api/tiendas` (listing), `/api/marketplace/**`, `/api/catalogo/**`, the Stereum webhook (`/api/webhooks/stereum/outbound`, authenticated by the `username`/`password` Stereum sends in the JSON body — verified against `stereum.webhook.*`), Swagger, `/actuator/health`. Everything else requires a Bearer token; method-level role checks use `@EnableMethodSecurity`.
 - Logout invalidation goes through `TokenBlacklist`.
 
 ### Payments
 
-Stereum (crypto QR payment) integration: `/api/pedidos` generates payment QR codes, `/api/pagos` and the inbound webhook at `/api/webhooks/stereum/outbound` confirm payment via HMAC-SHA256-signed callbacks. Credentials/URLs are env-driven with local-testnet overrides in `application-local.properties`.
+Stereum (crypto QR payment) integration: `/api/pedidos/.../qr` generates payment QR codes (`StereumService.crearCargo` → `POST /transactions/create-charge`, needs `account_id` + an api-key with the "Generar QR de Pago" permission). Payment is confirmed by Stereum's **inbound callback** to `/api/webhooks/stereum/outbound` — a flat JSON body (`transactionId`, `username`/`password`, etc.) matched to a `Pago` by `transaccionPasarelaId`; on success the `Pago`→EXITOSO and `Pedido`→PAGADO. The callback is authenticated by the body `username`/`password` (config `stereum.webhook.*`), **not** by HMAC headers (the earlier HMAC impl was based on a wrong assumption about the payload). Credentials/URLs are env-driven with local-testnet overrides in `application-local.properties`.
 
 ### Background jobs (Quartz, persistent JDBC JobStore)
 
@@ -70,6 +70,8 @@ Schema lives in `script/quartz.sql` (apply before first run) and `script/quartz-
 ### Configuration
 
 `application.properties` holds defaults with env-var fallbacks (DB, JWT secret, Google client ID, Stereum keys, SMTP). `application-local.properties` (profile `local`) carries the actual local-dev values — per [[local-credentials-convention]], real local credentials belong here, not in global Windows env vars. `ddl-auto=update` — schema migrates automatically on boot, no Flyway/Liquibase.
+
+Two pieces of DB state are *not* covered by `ddl-auto` and need raw SQL: the Quartz `qrtz_*` tables (`script/quartz.sql`, apply before first run — see Background jobs) and the accent-insensitive search function `kilikea_norm` used by marketplace search. `MarketplaceDbInitializer` tries to `CREATE OR REPLACE` that function at startup; `script/marketplace.sql` is the manual fallback if the boot user lacks privileges.
 
 ### Frontend structure (`frontend/src`)
 

@@ -11,6 +11,7 @@ import com.upb.ecommerce.core.integracion.StereumCustomer;
 import com.upb.ecommerce.core.integracion.StereumService;
 import com.upb.ecommerce.data.repository.*;
 import com.upb.ecommerce.domain.entities.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PedidoService {
 
@@ -122,20 +124,21 @@ public class PedidoService {
         pedido.setTienda(tienda);
         pedido.setUsuario(usuario);
         pedido.setCodigoSeguimiento("PED-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        pedido.setEstadoPedido("PENDIENTE");
         pedido.setDetalles(new ArrayList<>());
         if (direccion != null) {
             pedido.setDireccionEnvio(direccion);
         }
 
+        // El pedido nace PENDIENTE: NO se descuenta stock ni se registra la venta todavía.
+        // La venta (descuento de stock + SALIDA de inventario) se registra al CONFIRMARSE EL PAGO
+        // (ver confirmarPago), para que un pedido impago no afecte el inventario.
         BigDecimal total = BigDecimal.ZERO;
         for (DetalleCarrito dc : carrito.getDetalles()) {
             Producto producto = dc.getProducto();
             if (producto.getStock() < dc.getCantidad()) {
                 throw new OperationException("Stock insuficiente para: " + producto.getNombre());
             }
-
-            producto.setStock(producto.getStock() - dc.getCantidad());
-            productoRepository.save(producto);
 
             DetallePedido dp = new DetallePedido();
             dp.setPedido(pedido);
@@ -145,15 +148,6 @@ public class PedidoService {
             pedido.getDetalles().add(dp);
 
             total = total.add(dc.getPrecioUnitario().multiply(BigDecimal.valueOf(dc.getCantidad())));
-
-            // Registro automático de SALIDA de inventario
-            MovimientoInventario mov = new MovimientoInventario();
-            mov.setTienda(tienda);
-            mov.setProducto(producto);
-            mov.setTipo("SALIDA");
-            mov.setCantidad(dc.getCantidad());
-            mov.setReferencia("Venta pedido #" + pedido.getCodigoSeguimiento());
-            movimientoRepository.save(mov);
         }
 
         pedido.setTotal(total);
@@ -195,7 +189,9 @@ public class PedidoService {
             throw new OperationException("No se puede cancelar un pedido en estado " + estado);
         }
 
-        if (pedido.getDetalles() != null) {
+        // Solo se repone el stock si ya se había descontado (es decir, si el pedido llegó a pagarse).
+        // Un pedido PENDIENTE (impago) nunca tocó el inventario, así que no hay nada que reponer.
+        if (stockYaDescontado(estado) && pedido.getDetalles() != null) {
             for (DetallePedido dp : pedido.getDetalles()) {
                 Producto producto = dp.getProducto();
                 producto.setStock(producto.getStock() + dp.getCantidad());
@@ -213,6 +209,53 @@ public class PedidoService {
 
         pedido.setEstadoPedido("CANCELADO");
         return PedidoResponse.fromEntity(pedidoRepository.save(pedido));
+    }
+
+    /** Estados en los que el stock del pedido ya fue descontado (post-pago). */
+    private boolean stockYaDescontado(String estado) {
+        return "PAGADO".equals(estado) || "PREPARANDO".equals(estado)
+                || "ENVIADO".equals(estado) || "ENTREGADO".equals(estado);
+    }
+
+    /**
+     * Confirma el pago de un pedido: descuenta el stock, registra la SALIDA de inventario
+     * (la "venta") y deja el pedido en PAGADO. Es <b>idempotente</b>: solo actúa sobre pedidos
+     * PENDIENTES, así que reenvíos del callback de Stereum no descuentan el stock dos veces.
+     */
+    @Transactional
+    public void confirmarPago(Pedido pedido) {
+        if (!"PENDIENTE".equals(pedido.getEstadoPedido())) {
+            log.info("Pedido {} no está PENDIENTE (está {}) — no se vuelve a registrar la venta",
+                    pedido.getId(), pedido.getEstadoPedido());
+            return;
+        }
+
+        Tienda tienda = pedido.getTienda();
+        if (pedido.getDetalles() != null) {
+            for (DetallePedido dp : pedido.getDetalles()) {
+                Producto producto = dp.getProducto();
+                int nuevoStock = producto.getStock() - dp.getCantidad();
+                if (nuevoStock < 0) {
+                    log.warn("Stock insuficiente al confirmar pago del pedido {} para '{}' (stock {}, vendido {}) — se deja en 0",
+                            pedido.getId(), producto.getNombre(), producto.getStock(), dp.getCantidad());
+                    nuevoStock = 0;
+                }
+                producto.setStock(nuevoStock);
+                productoRepository.save(producto);
+
+                MovimientoInventario mov = new MovimientoInventario();
+                mov.setTienda(tienda);
+                mov.setProducto(producto);
+                mov.setTipo("SALIDA");
+                mov.setCantidad(dp.getCantidad());
+                mov.setReferencia("Venta pagada pedido " + pedido.getCodigoSeguimiento());
+                movimientoRepository.save(mov);
+            }
+        }
+
+        pedido.setEstadoPedido("PAGADO");
+        pedidoRepository.save(pedido);
+        log.info("Pedido {} PAGADO: venta registrada y stock descontado", pedido.getId());
     }
 
     /**

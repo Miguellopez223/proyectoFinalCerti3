@@ -23,13 +23,16 @@ public class PagoService {
     private final PagoRepository pagoRepository;
     private final PedidoRepository pedidoRepository;
     private final StereumService stereumService;
+    private final PedidoService pedidoService;
 
     public PagoService(PagoRepository pagoRepository,
                        PedidoRepository pedidoRepository,
-                       StereumService stereumService) {
+                       StereumService stereumService,
+                       PedidoService pedidoService) {
         this.pagoRepository = pagoRepository;
         this.pedidoRepository = pedidoRepository;
         this.stereumService = stereumService;
+        this.pedidoService = pedidoService;
     }
 
     public List<PagoResponse> listarPorPedido(Long pedidoId) {
@@ -80,9 +83,8 @@ public class PagoService {
             pagoRepository.save(pago);
 
             if ("EXITOSO".equals(estadoPago)) {
-                Pedido pedido = pago.getPedido();
-                pedido.setEstadoPedido("PAGADO");
-                pedidoRepository.save(pedido);
+                // Descuenta stock + registra la venta + deja el pedido PAGADO (idempotente).
+                pedidoService.confirmarPago(pago.getPedido());
             }
         });
 

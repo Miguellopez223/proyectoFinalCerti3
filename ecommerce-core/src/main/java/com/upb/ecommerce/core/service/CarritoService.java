@@ -129,9 +129,12 @@ public class CarritoService {
             detalle.setPrecioUnitario(precioEfectivo(producto));
             detalleCarritoRepository.save(detalle);
         }
+        detalleCarritoRepository.flush();
 
         recalcularTotal(carrito.getId());
-        return CarritoResponse.fromEntity(carritoRepository.findById(carrito.getId()).orElseThrow());
+
+        Carrito actualizado = carritoRepository.findById(carrito.getId()).orElseThrow();
+        return CarritoResponse.fromEntity(actualizado, detalleCarritoRepository.findByCarritoId(carrito.getId()));
     }
 
     @Transactional
@@ -151,8 +154,10 @@ public class CarritoService {
 
         detalleCarritoRepository.delete(detalle);
         detalleCarritoRepository.flush();
-        recalcularTotal(carrito);
-        return CarritoResponse.fromEntity(carritoRepository.findById(carritoId).orElseThrow());
+        recalcularTotal(carritoId);
+
+        Carrito actualizado = carritoRepository.findById(carritoId).orElseThrow();
+        return CarritoResponse.fromEntity(actualizado, detalleCarritoRepository.findByCarritoId(carritoId));
     }
 
     @Transactional
@@ -180,18 +185,16 @@ public class CarritoService {
         return oferta;
     }
 
+    /**
+     * Recalcula y persiste el total del carrito sumando sus detalles <b>leídos de la BD</b>
+     * (no de la colección en memoria, que dentro de la misma transacción de una mutación
+     * puede no incluir el ítem recién guardado — ese era el bug del "subtotal en 0").
+     */
     private void recalcularTotal(Long carritoId) {
-        Carrito fresh = carritoRepository.findById(carritoId).orElseThrow();
-        recalcularTotal(fresh);
-    }
-
-    private void recalcularTotal(Carrito carrito) {
-        BigDecimal total = BigDecimal.ZERO;
-        if (carrito.getDetalles() != null) {
-            for (DetalleCarrito d : carrito.getDetalles()) {
-                total = total.add(d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())));
-            }
-        }
+        Carrito carrito = carritoRepository.findById(carritoId).orElseThrow();
+        BigDecimal total = detalleCarritoRepository.findByCarritoId(carritoId).stream()
+                .map(d -> d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         carrito.setTotalEstimado(total);
         carritoRepository.save(carrito);
     }

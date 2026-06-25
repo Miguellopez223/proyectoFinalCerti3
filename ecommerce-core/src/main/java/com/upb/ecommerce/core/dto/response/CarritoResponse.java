@@ -39,15 +39,31 @@ public class CarritoResponse {
     }
 
     public static CarritoResponse fromEntity(Carrito c) {
+        CarritoResponse r = base(c);
+        if (c.getDetalles() != null) {
+            r.setItems(c.getDetalles().stream().map(ItemCarritoResponse::fromEntity).toList());
+        }
+        return r;
+    }
+
+    /**
+     * Variante que arma los items con una lista de detalles leída aparte (fresca de la BD).
+     * Se usa en las mutaciones del carrito, donde la colección {@code c.getDetalles()} en
+     * memoria puede estar desactualizada respecto a lo recién guardado.
+     */
+    public static CarritoResponse fromEntity(Carrito c, List<DetalleCarrito> detalles) {
+        CarritoResponse r = base(c);
+        r.setItems(detalles.stream().map(ItemCarritoResponse::fromEntity).toList());
+        return r;
+    }
+
+    private static CarritoResponse base(Carrito c) {
         CarritoResponse r = new CarritoResponse();
         r.setId(c.getId());
         r.setTiendaId(c.getTienda().getId());
         r.setUsuarioId(c.getUsuario().getId());
         r.setEstado(c.getEstado());
         r.setTotalEstimado(c.getTotalEstimado());
-        if (c.getDetalles() != null) {
-            r.setItems(c.getDetalles().stream().map(ItemCarritoResponse::fromEntity).toList());
-        }
         return r;
     }
 }

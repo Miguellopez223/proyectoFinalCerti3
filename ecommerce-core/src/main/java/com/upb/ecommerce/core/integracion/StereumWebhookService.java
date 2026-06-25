@@ -1,24 +1,24 @@
 package com.upb.ecommerce.core.integracion;
 
+import com.upb.ecommerce.core.service.PedidoService;
 import com.upb.ecommerce.data.repository.PagoRepository;
-import com.upb.ecommerce.data.repository.PedidoRepository;
 import com.upb.ecommerce.domain.entities.Pago;
-import com.upb.ecommerce.domain.entities.Pedido;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+
 /**
- * Lógica de negocio para las notificaciones de webhook de Stereum (cambios de estado de
- * un cargo). El controlador ya validó la firma y el tiempo antes de llamar aquí.
+ * Lógica de negocio del callback de pago de Stereum. El controlador ya autenticó el aviso.
  *
- * <p>Mapea el estado del cargo en Stereum al estado del {@link Pago} y del
- * {@link Pedido} de este sistema:
+ * <p>Stereum envía este callback cuando un cargo cambia de estado. Localiza el {@link Pago}
+ * por {@code transactionId} (= {@code Pago.transaccionPasarelaId}) y sincroniza el estado del
+ * pago y su {@link Pedido}:
  * <ul>
- *   <li><b>PAGADO</b> → pago EXITOSO y pedido PAGADO.</li>
- *   <li><b>CANCELADO / ERROR</b> → pago RECHAZADO (el pedido sigue PENDIENTE para poder
- *       reintentar el cobro).</li>
- *   <li><b>PENDIENTE</b> → sin cambios (el cargo aún no se ha pagado).</li>
+ *   <li>status de rechazo (CANCELADO/ERROR/...) → pago RECHAZADO (el pedido sigue PENDIENTE).</li>
+ *   <li>cualquier otro caso (incluido status null) → pago EXITOSO y pedido PAGADO, porque
+ *       Stereum solo emite este aviso cuando el pago se concretó.</li>
  * </ul>
  */
 @Slf4j
@@ -26,57 +26,57 @@ import org.springframework.transaction.annotation.Transactional;
 public class StereumWebhookService {
 
     private final PagoRepository pagoRepository;
-    private final PedidoRepository pedidoRepository;
+    private final PedidoService pedidoService;
 
-    public StereumWebhookService(PagoRepository pagoRepository, PedidoRepository pedidoRepository) {
+    public StereumWebhookService(PagoRepository pagoRepository, PedidoService pedidoService) {
         this.pagoRepository = pagoRepository;
-        this.pedidoRepository = pedidoRepository;
+        this.pedidoService = pedidoService;
     }
 
     @Transactional
-    public void procesarNotificacion(StereumWebhookNotificacion notificacion) {
-        StereumWebhookTransaccion tx = notificacion.getTransaction();
-        if (tx == null || tx.getId() == null) {
-            log.warn("Notificación de transacción sin datos de transacción — se ignora");
+    public void procesarPagoCallback(StereumPagoCallback callback) {
+        String txId = callback.getTransactionId() != null && !callback.getTransactionId().isBlank()
+                ? callback.getTransactionId()
+                : callback.getAlias();
+
+        if (txId == null || txId.isBlank()) {
+            // Sin id de transacción: probablemente un ping de validación de la URL.
+            log.info("Callback Stereum sin transactionId — se ignora (posible validación de URL)");
             return;
         }
 
-        Pago pago = pagoRepository.findByTransaccionPasarelaId(tx.getId()).orElse(null);
+        Pago pago = pagoRepository.findByTransaccionPasarelaId(txId).orElse(null);
         if (pago == null) {
-            // No conocemos esta transacción (p.ej. cobro generado fuera de este sistema).
-            log.warn("No se encontró un pago para la transacción Stereum {} — se ignora", tx.getId());
+            log.warn("No se encontró un pago para la transacción Stereum {} — se ignora", txId);
             return;
         }
 
-        // Idempotencia: si ya está cerrado, no reprocesamos (Stereum puede reenviar).
+        // Idempotencia: Stereum puede reenviar el mismo callback.
         if ("EXITOSO".equals(pago.getEstadoPago()) || "RECHAZADO".equals(pago.getEstadoPago())) {
-            log.info("El pago {} ya está en estado {} — notificación ignorada",
-                    pago.getId(), pago.getEstadoPago());
+            log.info("El pago {} ya está en estado {} — callback ignorado", pago.getId(), pago.getEstadoPago());
             return;
         }
 
-        String estadoStereum = tx.getStatus();
-        log.info("Procesando notificación Stereum: transacción {} → estado {}",
-                tx.getId(), estadoStereum);
-
-        switch (estadoStereum) {
-            case "PAGADO" -> {
-                pago.setEstadoPago("EXITOSO");
-                pagoRepository.save(pago);
-
-                Pedido pedido = pago.getPedido();
-                pedido.setEstadoPedido("PAGADO");
-                pedidoRepository.save(pedido);
-                log.info("Pago {} marcado EXITOSO y pedido {} marcado PAGADO",
-                        pago.getId(), pedido.getId());
-            }
-            case "CANCELADO", "ERROR" -> {
-                pago.setEstadoPago("RECHAZADO");
-                pagoRepository.save(pago);
-                log.info("Pago {} marcado RECHAZADO (estado Stereum {})", pago.getId(), estadoStereum);
-            }
-            default -> log.info("Estado Stereum {} sin acción (pago {} sigue PENDIENTE)",
-                    estadoStereum, pago.getId());
+        if (esRechazo(callback.getStatus())) {
+            pago.setEstadoPago("RECHAZADO");
+            pagoRepository.save(pago);
+            log.info("Pago {} marcado RECHAZADO (status Stereum {})", pago.getId(), callback.getStatus());
+            return;
         }
+
+        pago.setEstadoPago("EXITOSO");
+        pagoRepository.save(pago);
+
+        // Confirma el pedido: descuenta stock + registra la venta (SALIDA) + lo deja PAGADO.
+        pedidoService.confirmarPago(pago.getPedido());
+        log.info("Pago {} marcado EXITOSO y venta registrada (callback Stereum {})", pago.getId(), txId);
+    }
+
+    private boolean esRechazo(String status) {
+        if (status == null || status.isBlank()) {
+            return false;
+        }
+        String s = status.toUpperCase(Locale.ROOT);
+        return s.contains("CANCEL") || s.contains("ERROR") || s.contains("RECHAZ") || s.contains("FAIL");
     }
 }
