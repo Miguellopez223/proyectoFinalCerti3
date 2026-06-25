@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { ProductImage } from '@/components/ProductImage';
@@ -9,7 +10,16 @@ import type { Producto } from '@/types';
  * Muestra imagen, badge de descuento, nombre de la TIENDA, nombre, precio (con oferta) y
  * botón de agregar. Click en la tarjeta -> detalle del producto.
  */
-export function ProductoCard({ producto, onAdd }: { producto: Producto; onAdd: (p: Producto) => void }) {
+export function ProductoCard({
+  producto,
+  onAdd,
+  badge,
+}: {
+  producto: Producto;
+  onAdd: (p: Producto) => void;
+  /** Etiqueta opcional sobre la imagen (p. ej. "NUEVO"). */
+  badge?: ReactNode;
+}) {
   const navigate = useNavigate();
   const enOferta = !!producto.enOferta;
   const precioMostrar = producto.precioEfectivo ?? producto.precio;
@@ -22,9 +32,12 @@ export function ProductoCard({ producto, onAdd }: { producto: Producto; onAdd: (
         onClick={() => navigate(`/tienda/producto/${producto.id}`)}
         className="relative block overflow-hidden text-left"
       >
-        {enOferta && producto.descuentoPorcentaje != null && (
-          <span className="mk-badge-disc absolute left-2.5 top-2.5 z-10">
-            -{producto.descuentoPorcentaje}%
+        {(badge || (enOferta && producto.descuentoPorcentaje != null)) && (
+          <span className="absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1">
+            {badge}
+            {enOferta && producto.descuentoPorcentaje != null && (
+              <span className="mk-badge-disc">-{producto.descuentoPorcentaje}%</span>
+            )}
           </span>
         )}
         {agotado && (

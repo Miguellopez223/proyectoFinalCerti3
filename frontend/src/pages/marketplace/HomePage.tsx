@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDown, Heart, ShoppingCart } from 'lucide-react';
+import { ArrowDown, Heart, ShoppingCart, X } from 'lucide-react';
 import { marketplaceApi } from '@/api/marketplace';
 import { useAsync } from '@/hooks/useAsync';
 import { useAddToCart } from '@/hooks/useAddToCart';
@@ -18,12 +18,33 @@ import type { HomeData, Producto } from '@/types';
 /** Marca mostrada en el hero del marketplace. */
 const BRAND = 'Klikea';
 
+/** Clave de localStorage para recordar los intereses (deslizados a la derecha). */
+const INTERESES_KEY = 'klikea.intereses';
+
+function leerIntereses(): Producto[] {
+  try {
+    const raw = localStorage.getItem(INTERESES_KEY);
+    return raw ? (JSON.parse(raw) as Producto[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Home del marketplace: hero magnético KLIKEA + destacados apilados + categorías + tiendas. */
 export default function HomePage() {
   const { data, loading, error } = useAsync<HomeData>(() => marketplaceApi.home(), []);
   const addToCart = useAddToCart();
   const navigate = useNavigate();
-  const [intereses, setIntereses] = useState<Producto[]>([]);
+  // Se recuerdan entre sesiones: lo que deslizás a la derecha queda guardado para comprar más tarde.
+  const [intereses, setIntereses] = useState<Producto[]>(leerIntereses);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(INTERESES_KEY, JSON.stringify(intereses));
+    } catch {
+      /* ignore */
+    }
+  }, [intereses]);
 
   function buscar(q: string) {
     navigate(`/tienda/buscar?q=${encodeURIComponent(q)}`);
@@ -50,12 +71,34 @@ export default function HomePage() {
     return [...base].sort((a, b) => (b.precioEfectivo ?? b.precio) - (a.precioEfectivo ?? a.precio)).slice(0, 5);
   }, [data, heroPool]);
 
+  /* Todas las listas del home, deduplicadas (fallback cuando el backend no
+     devuelve `catalogo`/`novedades` todavía — p. ej. sin reiniciar). */
+  const combinados = useMemo(() => {
+    const seen = new Set<number>();
+    const out: Producto[] = [];
+    for (const p of [...(data?.masBuscados ?? []), ...(data?.destacados ?? []), ...(data?.ofertas ?? [])]) {
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        out.push(p);
+      }
+    }
+    return out;
+  }, [data]);
+
+  /* Nuevos productos (sección NUEVO): usa `novedades` del backend nuevo; si no,
+     cae a `masBuscados`, que el backend calcula como los más recientes (id DESC). */
+  const novedades = data?.novedades?.length ? data.novedades : (data?.masBuscados ?? []);
+
+  /* Deck "Descubrí deslizando": catálogo completo del backend nuevo; si no, todas
+     las listas combinadas para que igual se vea lleno. */
+  const deck = data?.catalogo?.length ? data.catalogo : combinados;
+
   if (loading) return <p className="py-16 text-center text-slate-400">Cargando…</p>;
   if (error) return <p className="py-16 text-center text-rose-400">{error}</p>;
 
-  const seccion = (titulo: string, productos: Producto[]) =>
+  const seccion = (titulo: string, productos: Producto[], id?: string) =>
     productos.length > 0 && (
-      <section className="mb-12">
+      <section id={id} className="scroll-mt-24 mb-20 sm:mb-28">
         <div className="mb-4 flex items-end justify-between gap-3">
           <h2 className="mk-section-title">{titulo}</h2>
           <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
@@ -90,7 +133,7 @@ export default function HomePage() {
             </p>
           </FadeIn>
           <FadeIn delay={0.5} y={20}>
-            <GradientPill onClick={() => document.getElementById('destacados')?.scrollIntoView({ behavior: 'smooth' })}>
+            <GradientPill onClick={() => document.getElementById('mas-buscados')?.scrollIntoView({ behavior: 'smooth' })}>
               Explorar <ArrowDown className="h-4 w-4" />
             </GradientPill>
           </FadeIn>
@@ -99,7 +142,7 @@ export default function HomePage() {
 
       {/* ── Destacados apilados al hacer scroll ──────────────────── */}
       {showcase.length >= 1 && (
-        <section id="destacados" className="scroll-mt-24 pb-16">
+        <section id="destacados" className="scroll-mt-24 pb-32 sm:pb-44">
           <FadeIn y={30} className="mb-10 flex items-end justify-between gap-4">
             <h2
               className="hero-heading font-black uppercase leading-none tracking-tight"
@@ -122,14 +165,40 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* ── Nuevos productos (NUEVO) — entre Destacados y Descubrí deslizando ── */}
+      {novedades.length > 0 && (
+        <section className="mb-20 sm:mb-28">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="mk-section-title">Descubre nuestros nuevos productos</h2>
+              <span className="rounded-full bg-gradient-to-r from-cta-500 to-cta-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-cta-900/30">
+                Nuevo
+              </span>
+            </div>
+            <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {novedades.map((p) => (
+              <ProductoCard
+                key={p.id}
+                producto={p}
+                onAdd={addToCart}
+                badge={
+                  <span className="rounded-full bg-gradient-to-r from-cta-500 to-cta-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg shadow-cta-900/40">
+                    Nuevo
+                  </span>
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── Swipe estilo Tinder: me interesa / no me interesa ────── */}
       {(() => {
-        const deck = (data?.destacados?.length ? data.destacados
-          : data?.ofertas?.length ? data.ofertas
-          : data?.masBuscados) ?? [];
         if (deck.length === 0) return null;
         return (
-          <section className="mb-12">
+          <section className="mb-20 pt-10 sm:mb-28 sm:pt-16">
             <div className="mb-4 flex items-end justify-between gap-3">
               <h2 className="mk-section-title">Descubrí deslizando</h2>
               <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
@@ -178,6 +247,14 @@ export default function HomePage() {
                         >
                           <ShoppingCart className="h-3.5 w-3.5" /> {p.stock <= 0 ? 'Sin stock' : 'Agregar'}
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setIntereses((prev) => prev.filter((x) => x.id !== p.id))}
+                          aria-label={`Quitar ${p.nombre} de tus intereses`}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -188,11 +265,11 @@ export default function HomePage() {
         );
       })()}
 
-      {seccion('Los más buscados', data?.masBuscados ?? [])}
+      {seccion('Los más buscados', data?.masBuscados ?? [], 'mas-buscados')}
       {seccion('Flash sales / Ofertas', data?.ofertas ?? [])}
 
       {/* Bento de categorías (grupos fijos; cada categoría busca por su nombre) */}
-      <section className="mb-12">
+      <section className="mb-20 sm:mb-28">
         <div className="mb-4 flex items-end justify-between gap-3">
           <h2 className="mk-section-title">Categorías</h2>
           <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
@@ -217,7 +294,7 @@ export default function HomePage() {
 
       {/* Tiendas que usan Klikea */}
       {(data?.tiendas?.length ?? 0) > 0 && (
-        <section className="mb-12">
+        <section className="mb-20 sm:mb-28">
           <div className="mb-4 flex items-end justify-between gap-3">
             <h2 className="mk-section-title">Tiendas en Klikea</h2>
             <span className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
