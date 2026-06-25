@@ -33,6 +33,7 @@ resource "random_id" "suffix" {
 locals {
   name_prefix        = "${var.project_name}-${random_id.suffix.hex}"
   backend_jar_path   = abspath("${path.module}/${var.backend_jar_path}")
+  backend_jar_hash   = filemd5(local.backend_jar_path)
   frontend_dist_path = abspath("${path.module}/${var.frontend_dist_path}")
   frontend_files     = fileset(local.frontend_dist_path, "**/*")
   frontend_origin_id = "${local.name_prefix}-frontend-origin"
@@ -117,9 +118,9 @@ resource "aws_s3_bucket" "artifacts" {
 
 resource "aws_s3_object" "backend_jar" {
   bucket = aws_s3_bucket.artifacts.id
-  key    = "backend/ecommerce-api.jar"
+  key    = "backend/ecommerce-api-${local.backend_jar_hash}.jar"
   source = local.backend_jar_path
-  etag   = filemd5(local.backend_jar_path)
+  etag   = local.backend_jar_hash
 }
 
 resource "aws_iam_role" "beanstalk_ec2" {
@@ -153,7 +154,7 @@ resource "aws_elastic_beanstalk_application" "api" {
 }
 
 resource "aws_elastic_beanstalk_application_version" "api" {
-  name        = "v-${random_id.suffix.hex}"
+  name        = "v-${random_id.suffix.hex}-${substr(local.backend_jar_hash, 0, 8)}"
   application = aws_elastic_beanstalk_application.api.name
   bucket      = aws_s3_bucket.artifacts.id
   key         = aws_s3_object.backend_jar.key
