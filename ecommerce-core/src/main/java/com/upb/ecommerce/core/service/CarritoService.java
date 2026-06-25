@@ -136,12 +136,23 @@ public class CarritoService {
 
     @Transactional
     public CarritoResponse eliminarItem(Long carritoId, Long detalleId) {
+        Carrito carrito = carritoRepository.findById(carritoId)
+                .orElseThrow(() -> new NotDataFoundException("Carrito no encontrado"));
         DetalleCarrito detalle = detalleCarritoRepository.findById(detalleId)
                 .orElseThrow(() -> new NotDataFoundException("Item no encontrado en el carrito"));
-        Long cid = detalle.getCarrito().getId();
+
+        if (!detalle.getCarrito().getId().equals(carritoId)) {
+            throw new OperationException("El item no pertenece al carrito indicado");
+        }
+
+        if (carrito.getDetalles() != null) {
+            carrito.getDetalles().removeIf(d -> d.getId().equals(detalleId));
+        }
+
         detalleCarritoRepository.delete(detalle);
-        recalcularTotal(cid);
-        return CarritoResponse.fromEntity(carritoRepository.findById(cid).orElseThrow());
+        detalleCarritoRepository.flush();
+        recalcularTotal(carrito);
+        return CarritoResponse.fromEntity(carritoRepository.findById(carritoId).orElseThrow());
     }
 
     @Transactional
@@ -151,6 +162,7 @@ public class CarritoService {
         if (carrito.getDetalles() != null && !carrito.getDetalles().isEmpty()) {
             detalleCarritoRepository.deleteAll(carrito.getDetalles());
             carrito.getDetalles().clear();
+            detalleCarritoRepository.flush();
         }
         carrito.setTotalEstimado(BigDecimal.ZERO);
         return CarritoResponse.fromEntity(carritoRepository.save(carrito));
@@ -170,13 +182,17 @@ public class CarritoService {
 
     private void recalcularTotal(Long carritoId) {
         Carrito fresh = carritoRepository.findById(carritoId).orElseThrow();
+        recalcularTotal(fresh);
+    }
+
+    private void recalcularTotal(Carrito carrito) {
         BigDecimal total = BigDecimal.ZERO;
-        if (fresh.getDetalles() != null) {
-            for (DetalleCarrito d : fresh.getDetalles()) {
+        if (carrito.getDetalles() != null) {
+            for (DetalleCarrito d : carrito.getDetalles()) {
                 total = total.add(d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())));
             }
         }
-        fresh.setTotalEstimado(total);
-        carritoRepository.save(fresh);
+        carrito.setTotalEstimado(total);
+        carritoRepository.save(carrito);
     }
 }
