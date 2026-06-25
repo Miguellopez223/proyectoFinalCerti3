@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -45,6 +46,9 @@ public class StereumService {
         }
         if (request.getAccountId() == null || request.getAccountId().isBlank()) {
             request.setAccountId(accountId);
+        }
+        if (!StringUtils.hasText(request.getAccountId())) {
+            throw new IllegalStateException("No esta configurado el account_id de Stereum.");
         }
 
         RestClient restClient = create();

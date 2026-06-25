@@ -302,6 +302,12 @@ resource "aws_elastic_beanstalk_environment" "api" {
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "STEREUM_ACCOUNT_ID"
+    value     = var.stereum_account_id
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
     name      = "SISTEMA_EXTERNO_URL_BASE"
     value     = "http://localhost:5000"
   }

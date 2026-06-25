@@ -78,6 +78,13 @@ variable "stereum_api_key" {
   default     = "98ca7eb3-7ce4-4bcb-8785-21dd15de4477"
 }
 
+variable "stereum_account_id" {
+  description = "Stereum collecting account id."
+  type        = string
+  sensitive   = true
+  default     = "efd8122f-5508-40ab-b149-ddfc873a8bc0"
+}
+
 variable "quartz_initialize_schema" {
   description = "Quartz JDBC schema initialization mode for the deployed backend. Use always for the first deployment to an empty RDS, then never if you want to preserve scheduled jobs across restarts."
   type        = string
