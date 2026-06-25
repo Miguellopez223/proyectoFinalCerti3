@@ -75,7 +75,7 @@ variable "stereum_api_key" {
   description = "Stereum API key."
   type        = string
   sensitive   = true
-  default     = "98ca7eb3-7ce4-4bcb-8785-21dd15de4477"
+  default     = "0b370ed6-7e86-4db3-bcba-313ee6f34e9b"
 }
 
 variable "stereum_account_id" {
