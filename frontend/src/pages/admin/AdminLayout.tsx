@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { tiendasApi } from '@/api/tiendas';
+import { useAsync } from '@/hooks/useAsync';
 import { cn } from '@/lib/cn';
 import {
   IconDashboard,
@@ -42,8 +44,10 @@ const nav: NavItem[] = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
-  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const tiendaId = user!.tiendaId;
+  const { data: tienda } = useAsync(() => tiendasApi.obtener(tiendaId), [tiendaId]);
 
   const initials = (user?.nombre ?? '?')
     .split(' ')
@@ -118,12 +122,7 @@ export default function AdminLayout() {
             {mobileOpen ? <IconClose /> : <IconMenu />}
           </button>
           <div className="flex flex-1 items-center justify-end gap-3">
-            <button
-              onClick={() => navigate('/admin')}
-              className="hidden text-sm text-slate-400 transition-colors hover:text-brand-600 sm:block"
-            >
-              Tienda #{user?.tiendaId}
-            </button>
+            <span className="hidden truncate text-sm text-slate-400 sm:block">{tienda?.nombre ?? ''}</span>
             <ThemeToggle className="h-9 w-9 shrink-0" />
             <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-sm">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">

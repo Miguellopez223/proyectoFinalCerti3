@@ -423,10 +423,8 @@ public class ReporteService {
 
     @Transactional(readOnly = true)
     public List<ProveedorCompraResponse> proveedores(Long tiendaId, LocalDate desde, LocalDate hasta) {
-        LocalDateTime ini = desde != null ? desde.atStartOfDay() : null;
-        LocalDateTime fin = hasta != null ? hasta.atTime(LocalTime.MAX) : null;
         List<ProveedorCompraResponse> lista = new ArrayList<>();
-        for (Object[] f : movimientoRepository.comprasPorProveedor(tiendaId, ini, fin)) {
+        for (Object[] f : movimientoRepository.comprasPorProveedor(tiendaId, desdeOAmplio(desde), hastaOAmplio(hasta))) {
             lista.add(new ProveedorCompraResponse(
                     (String) f[0],
                     ((Number) f[1]).longValue(),
@@ -441,11 +439,16 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public List<MovimientoInventarioResponse> movimientos(Long tiendaId, String tipo, Long usuarioId,
                                                           LocalDate desde, LocalDate hasta) {
-        LocalDateTime ini = desde != null ? desde.atStartOfDay() : null;
-        LocalDateTime fin = hasta != null ? hasta.atTime(LocalTime.MAX) : null;
         String tipoNorm = (tipo != null && !tipo.isBlank()) ? tipo.toUpperCase() : null;
-        return movimientoRepository.filtrar(tiendaId, tipoNorm, usuarioId, ini, fin)
-                .stream().map(MovimientoInventarioResponse::fromEntity).toList();
+        // El rango va siempre con valores no nulos a la query; tipo/usuario se filtran en memoria
+        // para evitar el problema de PostgreSQL con binds nulos sin tipo.
+        return movimientoRepository.findEntreFechas(tiendaId, desdeOAmplio(desde), hastaOAmplio(hasta))
+                .stream()
+                .filter(m -> tipoNorm == null || tipoNorm.equals(m.getTipo()))
+                .filter(m -> usuarioId == null
+                        || (m.getUsuario() != null && usuarioId.equals(m.getUsuario().getId())))
+                .map(MovimientoInventarioResponse::fromEntity)
+                .toList();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -457,6 +460,16 @@ public class ReporteService {
 
     private LocalDateTime fin(LocalDate hasta) {
         return (hasta != null ? hasta : LocalDate.now()).atTime(LocalTime.MAX);
+    }
+
+    /** Inicio del rango con sentinela amplio (no nulo) cuando no se especifica fecha. */
+    private LocalDateTime desdeOAmplio(LocalDate desde) {
+        return (desde != null ? desde : LocalDate.of(1970, 1, 1)).atStartOfDay();
+    }
+
+    /** Fin del rango con sentinela amplio (no nulo) cuando no se especifica fecha. */
+    private LocalDateTime hastaOAmplio(LocalDate hasta) {
+        return (hasta != null ? hasta : LocalDate.of(2999, 12, 31)).atTime(LocalTime.MAX);
     }
 
     private List<DetallePedido> detalles(Pedido p) {

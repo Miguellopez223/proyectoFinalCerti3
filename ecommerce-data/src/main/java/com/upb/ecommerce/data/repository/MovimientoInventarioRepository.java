@@ -27,31 +27,26 @@ public interface MovimientoInventarioRepository extends JpaRepository<Movimiento
     List<Object[]> ultimaSalidaPorProducto(@Param("tiendaId") Long tiendaId);
 
     /**
-     * Movimientos filtrados por tipo / usuario / rango de fechas (cualquiera opcional).
-     * Usado por la pestaña "Movimientos" de reportes.
+     * Movimientos de la tienda dentro de un rango de fechas (no nulo), más recientes primero.
+     * Los filtros opcionales por tipo/usuario se aplican en memoria en el servicio para evitar
+     * el problema de PostgreSQL con binds nulos sin tipo (patrón {@code :param IS NULL}).
      */
     @Query("SELECT m FROM MovimientoInventario m WHERE m.tienda.id = :tiendaId " +
-            "AND (:tipo IS NULL OR m.tipo = :tipo) " +
-            "AND (:usuarioId IS NULL OR m.usuario.id = :usuarioId) " +
-            "AND (:desde IS NULL OR m.fecha >= :desde) " +
-            "AND (:hasta IS NULL OR m.fecha <= :hasta) " +
+            "AND m.fecha >= :desde AND m.fecha <= :hasta " +
             "ORDER BY m.fecha DESC")
-    List<MovimientoInventario> filtrar(@Param("tiendaId") Long tiendaId,
-                                       @Param("tipo") String tipo,
-                                       @Param("usuarioId") Long usuarioId,
-                                       @Param("desde") LocalDateTime desde,
-                                       @Param("hasta") LocalDateTime hasta);
+    List<MovimientoInventario> findEntreFechas(@Param("tiendaId") Long tiendaId,
+                                               @Param("desde") LocalDateTime desde,
+                                               @Param("hasta") LocalDateTime hasta);
 
     /**
-     * Compras por proveedor en un rango: agrupa las ENTRADAS con proveedor no nulo. Filas
-     * [proveedor (String), numEntradas (Long), unidades (Long), costoTotal (BigDecimal)].
+     * Compras por proveedor en un rango (no nulo): agrupa las ENTRADAS con proveedor no nulo.
+     * Filas [proveedor (String), numEntradas (Long), unidades (Long), costoTotal (BigDecimal)].
      * El costo total ignora entradas sin precioUnitario (SUM omite nulos).
      */
     @Query("SELECT m.proveedor, COUNT(m), SUM(m.cantidad), SUM(m.cantidad * m.precioUnitario) " +
             "FROM MovimientoInventario m WHERE m.tienda.id = :tiendaId AND m.tipo = 'ENTRADA' " +
             "AND m.proveedor IS NOT NULL AND m.proveedor <> '' " +
-            "AND (:desde IS NULL OR m.fecha >= :desde) " +
-            "AND (:hasta IS NULL OR m.fecha <= :hasta) " +
+            "AND m.fecha >= :desde AND m.fecha <= :hasta " +
             "GROUP BY m.proveedor ORDER BY SUM(m.cantidad * m.precioUnitario) DESC")
     List<Object[]> comprasPorProveedor(@Param("tiendaId") Long tiendaId,
                                        @Param("desde") LocalDateTime desde,
