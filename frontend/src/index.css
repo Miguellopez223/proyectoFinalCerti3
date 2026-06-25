@@ -275,6 +275,120 @@
   100% { background-position: 0%   0%;   }
 }
 
+/* ── Marketplace (Klikea) dark storefront kit ───────────────────────
+   Self-contained component classes for the dark elGenioX-style storefront.
+   Surfaces are glass over the .tienda-bg canvas; cyan = interaction, green = CTA. */
+@layer components {
+  .mk-surface {
+    @apply rounded-2xl border border-white/10 bg-white/[0.045] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-sm;
+  }
+  .mk-card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.045] backdrop-blur-sm transition-all duration-200
+      hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]
+      hover:shadow-[0_20px_50px_-14px_rgba(0,0,0,0.75)];
+  }
+  .mk-input {
+    @apply w-full rounded-full border border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500
+      transition-colors focus:border-brand-400 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+  }
+  .mk-select {
+    @apply rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-100
+      transition-colors focus:border-brand-400 focus:outline-none;
+  }
+  .mk-chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-4 py-1.5
+      text-sm text-slate-300 transition-colors hover:border-brand-400/60 hover:bg-brand-500/10 hover:text-white;
+  }
+  .mk-chip-active {
+    @apply border-brand-400/70 bg-brand-500/15 text-white;
+  }
+  .mk-btn-cta {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cta-500 to-cta-600
+      px-5 py-2.5 font-semibold text-white shadow-[0_8px_24px_-6px_rgba(34,197,94,0.5)]
+      transition-all duration-200 hover:from-cta-400 hover:to-cta-500
+      hover:shadow-[0_10px_30px_-6px_rgba(34,197,94,0.6)] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+  }
+  .mk-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-5 py-2.5
+      font-medium text-slate-200 transition-colors hover:border-white/35 hover:bg-white/5
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .mk-badge-disc {
+    @apply rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-2 py-0.5 text-xs font-bold text-white shadow-lg shadow-rose-900/40;
+  }
+  .mk-section-title {
+    @apply text-xl font-bold tracking-tight text-white sm:text-2xl;
+  }
+  /* Native option list inside .mk-select stays readable */
+  .mk-select option {
+    @apply bg-slate-900 text-slate-100;
+  }
+}
+
+/* ── Modo claro ──────────────────────────────────────────────────────
+   El storefront/auth son oscuros por defecto (clases con colores literales).
+   En modo claro (`html.light`) reasignamos el lienzo, las superficies de vidrio
+   y la escala de texto, todo ACOTADO a `.tienda-bg` para no tocar el panel admin
+   (que ya es claro). */
+html.light .tienda-bg {
+  background-color: #f4f2ef; /* blanco cálido */
+}
+
+/* Suaviza las luces cálidas para que no laven el contenido en claro */
+html.light .tienda-bg::before { opacity: 0.4; }
+html.light .tienda-bg::after  { opacity: 0.35; }
+
+/* Títulos display: gradiente cálido oscuro, legible sobre fondo claro */
+html.light .hero-heading {
+  background: linear-gradient(180deg, #7a3310 0%, #c4631d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Texto: invierte la escala oscura a tonos slate legibles */
+html.light .tienda-bg .text-white,
+html.light .tienda-bg .text-slate-100,
+html.light .tienda-bg .text-slate-200 { color: #0f172a !important; }
+html.light .tienda-bg .text-slate-300 { color: #334155 !important; }
+html.light .tienda-bg .text-slate-400,
+html.light .tienda-bg .text-slate-500 { color: #475569 !important; }
+html.light .tienda-bg [class*="#D7E2EA"] { color: #1f2937 !important; }
+html.light .tienda-bg [class*="text-white/"] { color: #64748b !important; }
+
+/* Superficies / bordes de vidrio → claros */
+html.light .tienda-bg [class*="bg-white/"]     { background-color: rgba(15, 23, 42, 0.04) !important; }
+html.light .tienda-bg [class*="border-white/"] { border-color: rgba(15, 23, 42, 0.12) !important; }
+html.light .tienda-bg [class*="bg-[#0c0c0c]"],
+html.light .tienda-bg [class*="bg-[#0a0a0a]"]  { background-color: rgba(255, 255, 255, 0.82) !important; }
+
+/* Componentes mk-* del kit del marketplace */
+html.light .mk-surface {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 8px 30px -12px rgba(15, 23, 42, 0.18) !important;
+}
+html.light .mk-card {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: #e2e8f0 !important;
+}
+html.light .mk-input {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light .mk-section-title { color: #0f172a !important; }
+html.light .mk-chip {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+html.light .mk-select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light .mk-select option { background: #ffffff !important; color: #0f172a !important; }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

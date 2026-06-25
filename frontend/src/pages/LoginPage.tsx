@@ -2,8 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthShell } from '@/components/AuthShell';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Field';
+import { AuthInput } from '@/components/AuthField';
+import { GradientPill } from '@/components/landing/PillButton';
 import { useAuth, homePathForRol } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/errors';
@@ -72,12 +72,12 @@ export default function LoginPage() {
   return (
     <AuthShell>
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-slate-900">Iniciar sesión</h2>
-        <p className="mt-1 text-sm text-slate-500">Ingresa tus credenciales para continuar.</p>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Iniciar sesión</h2>
+        <p className="mt-1.5 text-sm text-slate-400">Ingresa tus credenciales para continuar.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <Input
+        <AuthInput
           label="Email"
           type="email"
           autoComplete="email"
@@ -87,7 +87,7 @@ export default function LoginPage() {
           error={errors.email}
           required
         />
-        <Input
+        <AuthInput
           label="Contraseña"
           type="password"
           autoComplete="current-password"
@@ -98,43 +98,48 @@ export default function LoginPage() {
           required
         />
 
-        <Button type="submit" className="w-full" size="lg" loading={submitting}>
-          Entrar
-        </Button>
+        <GradientPill type="submit" disabled={submitting} className="mt-2 w-full">
+          {submitting ? 'Entrando…' : 'Entrar'}
+        </GradientPill>
       </form>
 
       <div className="mt-5 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-400">o</span>
-          <div className="h-px flex-1 bg-slate-200" />
+          <div className="h-px flex-1 bg-white/10" />
+          <span className="text-xs font-medium uppercase tracking-wide text-white/35">o</span>
+          <div className="h-px flex-1 bg-white/10" />
         </div>
 
         {googleClientId ? (
-          <div className="flex justify-center">
+          <div className="flex justify-center [color-scheme:light]">
             <GoogleLogin
               onSuccess={(credentialResponse) =>
                 void handleGoogleCredential(credentialResponse.credential)
               }
               onError={() => toast.error('Google no pudo autenticar la cuenta.')}
               useOneTap={false}
+              theme="filled_black"
             />
           </div>
         ) : (
           <div className="space-y-2">
-            <Button type="button" variant="secondary" className="w-full" size="lg" disabled>
+            <button
+              type="button"
+              disabled
+              className="w-full cursor-not-allowed rounded-full border border-white/12 bg-white/5 py-3 text-sm font-medium uppercase tracking-widest text-white/40"
+            >
               Continuar con Google
-            </Button>
-            <p className="text-center text-xs text-slate-500">
+            </button>
+            <p className="text-center text-xs text-white/40">
               Falta configurar VITE_GOOGLE_CLIENT_ID.
             </p>
           </div>
         )}
       </div>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-slate-400">
         ¿Eres cliente nuevo?{' '}
-        <Link to="/registro" className="font-medium text-brand-600 hover:text-brand-700">
+        <Link to="/registro" className="font-semibold text-[#e7a149] transition-colors hover:text-[#f4c178]">
           Crea tu cuenta
         </Link>
       </p>

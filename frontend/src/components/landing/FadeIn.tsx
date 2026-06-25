@@ -1,5 +1,5 @@
 import { motion, type HTMLMotionProps } from 'framer-motion';
-import type { ElementType, ReactNode } from 'react';
+import { useMemo, type ElementType, type ReactNode } from 'react';
 
 interface FadeInProps {
   children: ReactNode;
@@ -33,7 +33,9 @@ export function FadeIn({
   className,
   style,
 }: FadeInProps) {
-  const MotionTag = motion.create(as as ElementType);
+  // Memoizado por `as`: sin esto, cada render crea un componente nuevo y React
+  // desmonta/remonta el subárbol (en un form, perdés el foco al escribir).
+  const MotionTag = useMemo(() => motion.create(as as ElementType), [as]);
 
   return (
     <MotionTag

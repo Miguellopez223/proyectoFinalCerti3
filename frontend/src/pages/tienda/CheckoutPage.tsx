@@ -116,60 +116,60 @@ export default function CheckoutPage() {
   if (step === 'direccion' && carritos.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-slate-500">Tu carrito está vacío.</p>
-        <Link to="/tienda" className="mt-3 inline-block text-cta-600 hover:underline">Ir a comprar</Link>
+        <p className="text-slate-400">Tu carrito está vacío.</p>
+        <Link to="/tienda" className="mt-3 inline-block font-medium text-brand-300 transition-colors hover:text-brand-200">Ir a comprar</Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Finalizar compra</h1>
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-6 text-3xl font-black tracking-tight text-white">Finalizar compra</h1>
 
       {step === 'direccion' && (
         <div className="space-y-6">
-          <section className="rounded-lg border border-slate-200 bg-white p-5">
-            <h2 className="mb-1 font-semibold text-slate-800">Dirección de envío</h2>
-            <p className="mb-3 text-sm text-slate-500">Opcional. Podés continuar sin dirección.</p>
+          <section className="mk-surface p-6">
+            <h2 className="mb-1 font-bold text-white">Dirección de envío</h2>
+            <p className="mb-4 text-sm text-slate-400">Opcional. Podés continuar sin dirección.</p>
             <div className="space-y-2">
               {direcciones.map((d) => (
-                <label key={d.id} className="flex items-start gap-2 rounded-md border border-slate-200 p-3 text-sm">
-                  <input type="radio" name="dir" className="mt-1" checked={direccionId === d.id} onChange={() => setDireccionId(d.id)} />
-                  <span><span className="font-medium text-slate-800">{d.direccionCalle}</span> — {d.ciudad}{d.referencias ? ` · ${d.referencias}` : ''}</span>
+                <label key={d.id} className="flex cursor-pointer items-start gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-300 transition-colors hover:border-white/20">
+                  <input type="radio" name="dir" className="mt-1 accent-brand-500" checked={direccionId === d.id} onChange={() => setDireccionId(d.id)} />
+                  <span><span className="font-medium text-white">{d.direccionCalle}</span> — {d.ciudad}{d.referencias ? ` · ${d.referencias}` : ''}</span>
                 </label>
               ))}
               {!showNew ? (
-                <button onClick={() => setShowNew(true)} className="text-sm text-cta-600 hover:underline">+ Agregar dirección</button>
+                <button onClick={() => setShowNew(true)} className="text-sm font-medium text-brand-300 transition-colors hover:text-brand-200">+ Agregar dirección</button>
               ) : (
-                <form onSubmit={guardarDireccion} className="space-y-2 rounded-md border border-slate-200 p-3">
+                <form onSubmit={guardarDireccion} className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
                   <input className="input-base" placeholder="Dirección / calle" value={newDir.direccionCalle} onChange={(e) => setNewDir((f) => ({ ...f, direccionCalle: e.target.value }))} />
                   <input className="input-base" placeholder="Ciudad" value={newDir.ciudad} onChange={(e) => setNewDir((f) => ({ ...f, ciudad: e.target.value }))} />
                   <input className="input-base" placeholder="Referencias (opcional)" value={newDir.referencias} onChange={(e) => setNewDir((f) => ({ ...f, referencias: e.target.value }))} />
-                  <button type="submit" disabled={savingDir} className="rounded-md bg-slate-800 px-3 py-1.5 text-sm text-white disabled:opacity-50">Guardar</button>
+                  <button type="submit" disabled={savingDir} className="mk-btn-cta px-4 py-1.5 text-sm">Guardar</button>
                 </form>
               )}
             </div>
           </section>
 
           {/* Resumen por tienda */}
-          <section className="rounded-lg border border-slate-200 bg-white p-5">
-            <h2 className="mb-3 font-semibold text-slate-800">Resumen ({carritos.length} {carritos.length === 1 ? 'tienda' : 'tiendas'})</h2>
+          <section className="mk-surface p-6">
+            <h2 className="mb-4 font-bold text-white">Resumen ({carritos.length} {carritos.length === 1 ? 'tienda' : 'tiendas'})</h2>
             {carritos.map((c) => (
-              <div key={c.id} className="mb-3 border-b border-slate-100 pb-2 last:border-0">
-                <p className="text-xs font-semibold uppercase text-slate-400">Tienda #{c.tiendaId}</p>
+              <div key={c.id} className="mb-3 border-b border-white/10 pb-3 last:border-0">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand-300/80">Tienda #{c.tiendaId}</p>
                 {c.items.map((it) => (
-                  <div key={it.id} className="flex justify-between text-sm text-slate-600">
+                  <div key={it.id} className="flex justify-between text-sm text-slate-300">
                     <span>{it.cantidad}× {it.productoNombre}</span>
-                    <span>{formatCurrency(it.subtotal)}</span>
+                    <span className="text-slate-200">{formatCurrency(it.subtotal)}</span>
                   </div>
                 ))}
               </div>
             ))}
-            <div className="flex justify-between border-t border-slate-200 pt-3 font-semibold text-slate-900">
+            <div className="flex justify-between border-t border-white/10 pt-3 text-lg font-black text-white">
               <span>Total</span><span>{formatCurrency(totalGeneral)}</span>
             </div>
-            <p className="mt-2 text-xs text-slate-400">Se generará un pedido y un pago QR por cada tienda.</p>
-            <button onClick={crearPedidos} disabled={creating || carritos.length === 0} className="mt-4 w-full rounded-md bg-cta-600 px-4 py-2.5 font-semibold text-white hover:bg-cta-500 disabled:opacity-50">
+            <p className="mt-2 text-xs text-slate-500">Se generará un pedido y un pago QR por cada tienda.</p>
+            <button onClick={crearPedidos} disabled={creating || carritos.length === 0} className="mk-btn-cta mt-4 w-full">
               {creating ? 'Creando pedidos…' : 'Crear pedidos'}
             </button>
           </section>
@@ -179,26 +179,26 @@ export default function CheckoutPage() {
       {step === 'pago' && (
         <div className="space-y-6">
           {todosPagados && (
-            <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-green-800">
+            <div className="rounded-2xl border border-cta-500/30 bg-cta-500/10 p-4 text-cta-200">
               ¡Todos los pedidos fueron pagados! <Link to="/tienda/pedidos" className="font-semibold underline">Ver mis pedidos</Link>
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <label className="text-sm text-slate-600">
-              Documento del pagador (CI){' '}
-              <input className="input-base mt-1" placeholder="Ej. 1234567" value={documento} onChange={(e) => setDocumento(e.target.value)} />
+          <div className="mk-surface p-5">
+            <label className="text-sm text-slate-300">
+              Documento del pagador (CI)
+              <input className="input-base mt-1.5" placeholder="Ej. 1234567" value={documento} onChange={(e) => setDocumento(e.target.value)} />
             </label>
           </div>
 
           {pedidos.map((p) => (
-            <section key={p.id} className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="mb-2 flex items-center justify-between">
+            <section key={p.id} className="mk-surface p-5">
+              <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-slate-800">Pedido #{p.id} · Tienda #{p.tiendaId}</p>
-                  <p className="text-sm text-slate-500">{formatCurrency(p.total)} — {p.codigoSeguimiento}</p>
+                  <p className="font-bold text-white">Pedido #{p.id} · Tienda #{p.tiendaId}</p>
+                  <p className="text-sm text-slate-400">{formatCurrency(p.total)} — {p.codigoSeguimiento}</p>
                 </div>
-                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${p.estadoPedido === 'PAGADO' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.estadoPedido === 'PAGADO' ? 'bg-cta-500/15 text-cta-300' : 'bg-amber-500/15 text-amber-300'}`}>
                   {p.estadoPedido}
                 </span>
               </div>
@@ -207,14 +207,14 @@ export default function CheckoutPage() {
                 qrs[p.id] ? (
                   <QrImage qr={qrs[p.id]} />
                 ) : (
-                  <button onClick={() => generarQr(p)} disabled={genId === p.id} className="rounded-md border border-cta-600 px-3 py-1.5 text-sm font-medium text-cta-600 hover:bg-cta-600/5 disabled:opacity-50">
+                  <button onClick={() => generarQr(p)} disabled={genId === p.id} className="rounded-full border border-cta-500/50 px-4 py-1.5 text-sm font-medium text-cta-300 transition-colors hover:bg-cta-500/10 disabled:opacity-50">
                     {genId === p.id ? 'Generando…' : 'Generar QR de pago'}
                   </button>
                 )
               )}
             </section>
           ))}
-          <p className="text-center text-xs text-slate-400">El pago se confirma solo (se verifica cada 5 s).</p>
+          <p className="text-center text-xs text-slate-500">El pago se confirma solo (se verifica cada 5 s).</p>
         </div>
       )}
     </div>
@@ -224,12 +224,12 @@ export default function CheckoutPage() {
 function QrImage({ qr }: { qr: StereumCharge }) {
   if (!qr.qr_base64) {
     return (
-      <div className="text-sm text-amber-700">
+      <div className="text-sm text-amber-300">
         La pasarela no devolvió imagen de QR.
         {qr.payment_link && <a href={qr.payment_link} target="_blank" rel="noreferrer" className="ml-1 underline">Abrir enlace de pago</a>}
       </div>
     );
   }
   const src = qr.qr_base64.startsWith('data:') ? qr.qr_base64 : `data:image/jpeg;base64,${qr.qr_base64}`;
-  return <img src={src} alt="QR de pago" className="h-48 w-48 object-contain" />;
+  return <img src={src} alt="QR de pago" className="h-48 w-48 rounded-xl bg-white p-2 object-contain ring-1 ring-white/10" />;
 }

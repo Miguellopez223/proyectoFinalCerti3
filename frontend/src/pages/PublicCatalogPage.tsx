@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, ArrowDown } from 'lucide-react';
+import { Search, ArrowDown, Heart } from 'lucide-react';
 import { catalogoApi } from '@/api/catalogo';
 import { useAsync } from '@/hooks/useAsync';
 import { ProductImage } from '@/components/ProductImage';
@@ -11,7 +11,7 @@ import { HeroProductField } from '@/components/landing/HeroProductField';
 import { AnimatedText } from '@/components/landing/AnimatedText';
 import { GradientPill } from '@/components/landing/PillButton';
 import { ProductMarquee } from '@/components/landing/ProductMarquee';
-import { StackingProducts } from '@/components/landing/StackingProducts';
+import { SwipeDeck } from '@/components/landing/SwipeDeck';
 import type { Producto } from '@/types';
 
 /** Catálogo público por slug (sin login). Solo lectura + pedidos por WhatsApp. */
@@ -19,6 +19,7 @@ export default function PublicCatalogPage() {
   const { slug = '' } = useParams();
   const { data, loading, error, reload } = useAsync(() => catalogoApi.porSlug(slug), [slug]);
   const [query, setQuery] = useState('');
+  const [intereses, setIntereses] = useState<Producto[]>([]);
 
   const storeName = data?.tienda.nombre ?? 'Catálogo';
   const allProducts = data?.productos ?? [];
@@ -141,35 +142,80 @@ export default function PublicCatalogPage() {
           />
         </section>
 
-        {/* Stacking showcase */}
+        {/* Destacados — deck tipo Tinder: deslizá derecha (me interesa) / izquierda (descartar) */}
         {showcase.length >= 1 && (
           <section className="pb-16">
-            <FadeIn y={30} className="mb-10">
+            <FadeIn y={30} className="mb-3">
               <h3 className="hero-heading font-black uppercase leading-none tracking-tight"
                 style={{ fontSize: 'clamp(2rem, 9vw, 110px)' }}
               >
                 Destacados
               </h3>
             </FadeIn>
-            <StackingProducts
-              products={showcase}
-              renderAction={(p) =>
-                waNumber ? (
-                  <a
-                    href={waLink(p)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-emerald-500/90 px-6 py-4 text-sm font-medium uppercase tracking-widest text-white transition-colors hover:bg-emerald-500"
-                  >
-                    <IconWhatsapp className="h-4 w-4" /> Pedir por WhatsApp
-                  </a>
+            <FadeIn delay={0.1} y={20} className="mb-10">
+              <p className="max-w-md text-sm font-light uppercase tracking-wide text-[#D7E2EA]/60">
+                Deslizá la carta — derecha si te interesa, izquierda si no. Lo que te guste se guarda abajo.
+              </p>
+            </FadeIn>
+
+            <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,440px)_1fr]">
+              <SwipeDeck
+                products={showcase}
+                onLike={(p) => setIntereses((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))}
+              />
+
+              {/* Bandeja de intereses */}
+              <div className="lg:pt-4">
+                <div className="mb-5 flex items-center gap-2.5">
+                  <Heart className="h-5 w-5 text-emerald-300" />
+                  <h4 className="text-sm font-semibold uppercase tracking-[0.25em] text-[#D7E2EA]">
+                    Tus intereses {intereses.length > 0 && <span className="text-white/40">({intereses.length})</span>}
+                  </h4>
+                </div>
+
+                {intereses.length === 0 ? (
+                  <p className="rounded-3xl border border-dashed border-white/12 p-6 text-sm font-light leading-relaxed text-white/40">
+                    Aún no marcaste ninguno. Deslizá una carta a la derecha o tocá el corazón para agregarlo aquí.
+                  </p>
                 ) : (
-                  <span className="block rounded-full border border-white/15 px-6 py-4 text-center text-sm uppercase tracking-widest text-white/50">
-                    {p.stock > 0 ? `${p.stock} disponibles` : 'Agotado'}
-                  </span>
-                )
-              }
-            />
+                  <ul className="space-y-2.5">
+                    {intereses.map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-2.5"
+                      >
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-black/40">
+                          <ProductImage src={p.imagenUrl} alt={p.nombre} className="h-full w-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium uppercase tracking-wide text-[#D7E2EA]">{p.nombre}</p>
+                          <p className="font-mono text-sm font-black text-white">{formatCurrency(p.precio)}</p>
+                        </div>
+                        {waNumber ? (
+                          <a
+                            href={waLink(p)}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Pedir ${p.nombre} por WhatsApp`}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/90 px-3.5 py-2 text-[11px] font-medium uppercase tracking-wider text-white transition-colors hover:bg-emerald-500"
+                          >
+                            <IconWhatsapp className="h-3.5 w-3.5" /> Pedir
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIntereses((prev) => prev.filter((x) => x.id !== p.id))}
+                            className="shrink-0 rounded-full border border-white/15 px-3 py-2 text-[11px] uppercase tracking-wider text-white/50 transition-colors hover:text-white"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </section>
         )}
 

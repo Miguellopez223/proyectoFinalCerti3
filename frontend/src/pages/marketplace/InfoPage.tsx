@@ -11,14 +11,15 @@ export default function InfoPage() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="mb-4 text-2xl font-semibold text-slate-900">{info.titulo}</h1>
-      <div className="space-y-3">
+    <div className="mx-auto max-w-3xl">
+      <p className="mb-2 text-sm text-slate-500">Inicio / Soporte</p>
+      <h1 className="mb-6 text-3xl font-black tracking-tight text-white">{info.titulo}</h1>
+      <div className="mk-surface space-y-4 p-6 sm:p-8">
         {info.parrafos.map((p, i) => (
-          <p key={i} className="text-sm leading-relaxed text-slate-600">{p}</p>
+          <p key={i} className="text-sm leading-relaxed text-slate-300">{p}</p>
         ))}
       </div>
-      <Link to="/tienda" className="mt-6 inline-block text-sm text-cta-600 hover:underline">← Volver al inicio</Link>
+      <Link to="/tienda" className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-brand-300 transition-colors hover:text-brand-200">← Volver al inicio</Link>
     </div>
   );
 }

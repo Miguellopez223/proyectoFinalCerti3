@@ -5,17 +5,20 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 
 const app = (
   <BrowserRouter>
-    <ToastProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   </BrowserRouter>
 );
 

@@ -76,57 +76,57 @@ export default function ProductoDetallePage() {
 
   return (
     <div>
-      <button onClick={() => navigate(-1)} className="mb-4 text-sm text-slate-500 hover:text-slate-800">← Volver</button>
+      <button onClick={() => navigate(-1)} className="mb-4 text-sm text-slate-400 transition-colors hover:text-white">← Volver</button>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr_320px]">
         {/* Imagen (una sola) */}
-        <div className="rounded-lg border border-slate-200 bg-white p-3">
-          <ProductImage src={producto.imagenUrl ?? undefined} alt={producto.nombre} className="aspect-square w-full rounded" />
+        <div className="mk-surface h-fit p-3">
+          <ProductImage src={producto.imagenUrl ?? undefined} alt={producto.nombre} className="aspect-square w-full rounded-xl bg-white/5" />
         </div>
 
         {/* Info central */}
         <div>
           {producto.tiendaSlug ? (
-            <Link to={`/tienda/comercio/${producto.tiendaSlug}`} className="text-sm text-slate-500 hover:underline">
+            <Link to={`/tienda/comercio/${producto.tiendaSlug}`} className="text-sm font-medium uppercase tracking-wide text-brand-300 transition-colors hover:text-brand-200">
               {producto.tiendaNombre}
             </Link>
           ) : (
-            <span className="text-sm text-slate-500">{producto.tiendaNombre}</span>
+            <span className="text-sm font-medium uppercase tracking-wide text-brand-300">{producto.tiendaNombre}</span>
           )}
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">{producto.nombre}</h1>
+          <h1 className="mt-1.5 text-3xl font-black tracking-tight text-white">{producto.nombre}</h1>
 
-          <div className="mt-3">
-            {enOferta && <span className="mr-2 text-base text-slate-400 line-through">{formatCurrency(producto.precio)}</span>}
-            <span className="text-3xl font-bold text-slate-900">{formatCurrency(precioMostrar)}</span>
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-3xl font-black text-white">{formatCurrency(precioMostrar)}</span>
+            {enOferta && <span className="text-base text-slate-500 line-through">{formatCurrency(producto.precio)}</span>}
             {enOferta && producto.descuentoPorcentaje != null && (
-              <span className="ml-2 rounded bg-red-600 px-1.5 py-0.5 text-sm font-bold text-white">-{producto.descuentoPorcentaje}%</span>
+              <span className="mk-badge-disc text-sm">-{producto.descuentoPorcentaje}%</span>
             )}
           </div>
-          <p className="mt-1 text-sm">
-            {agotado ? <span className="font-medium text-red-600">Sin stock</span> : <span className="text-slate-500">{producto.stock} disponibles</span>}
+          <p className="mt-1.5 text-sm">
+            {agotado ? <span className="font-semibold text-rose-400">Sin stock</span> : <span className="text-slate-400">{producto.stock} disponibles</span>}
           </p>
 
-          <ul className="mt-4 grid grid-cols-2 gap-2">
+          <ul className="mt-5 grid grid-cols-2 gap-2.5">
             {FEATURES.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2 text-sm text-slate-600">
-                <Icon className="h-4 w-4 text-slate-400" /> {label}
+              <li key={label} className="flex items-center gap-2 text-sm text-slate-300">
+                <Icon className="h-4 w-4 text-brand-300" /> {label}
               </li>
             ))}
           </ul>
 
           {producto.descripcionLarga && (
-            <div className="mt-5">
-              <h2 className="mb-1 text-sm font-semibold text-slate-700">Detalles del producto</h2>
-              <p className="whitespace-pre-line text-sm text-slate-600">{producto.descripcionLarga}</p>
+            <div className="mt-6">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Detalles del producto</h2>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-slate-300">{producto.descripcionLarga}</p>
             </div>
           )}
 
           {(atributos?.length ?? 0) > 0 && (
-            <dl className="mt-4 grid grid-cols-2 gap-2">
+            <dl className="mt-5 grid grid-cols-2 gap-2.5">
               {atributos?.map((a) => (
-                <div key={a.id} className="rounded border border-slate-200 bg-slate-50 px-3 py-2">
-                  <dt className="text-xs text-slate-400">{a.nombre}</dt>
-                  <dd className="text-sm text-slate-700">{a.valor}</dd>
+                <div key={a.id} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                  <dt className="text-xs text-slate-500">{a.nombre}</dt>
+                  <dd className="text-sm text-slate-200">{a.valor}</dd>
                 </div>
               ))}
             </dl>
@@ -134,15 +134,15 @@ export default function ProductoDetallePage() {
         </div>
 
         {/* Panel de compra */}
-        <div className="h-fit rounded-lg border border-slate-200 bg-white p-4">
-          <p className="text-2xl font-bold text-slate-900">{formatCurrency(precioMostrar)}</p>
+        <div className="mk-surface h-fit p-5">
+          <p className="text-3xl font-black text-white">{formatCurrency(precioMostrar)}</p>
 
           {!agotado && (
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex items-center rounded-md border border-slate-300">
-                <button onClick={() => setCantidad((c) => Math.max(1, c - 1))} className="p-2 text-slate-500" aria-label="Menos"><Minus className="h-4 w-4" /></button>
-                <span className="w-10 text-center text-sm font-semibold">{cantidad}</span>
-                <button onClick={() => setCantidad((c) => Math.min(max, c + 1))} className="p-2 text-slate-500" aria-label="Más"><Plus className="h-4 w-4" /></button>
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex items-center rounded-full border border-white/15 bg-white/5">
+                <button onClick={() => setCantidad((c) => Math.max(1, c - 1))} className="rounded-l-full p-2.5 text-slate-300 transition-colors hover:text-white" aria-label="Menos"><Minus className="h-4 w-4" /></button>
+                <span className="w-10 text-center text-sm font-bold text-white">{cantidad}</span>
+                <button onClick={() => setCantidad((c) => Math.min(max, c + 1))} className="rounded-r-full p-2.5 text-slate-300 transition-colors hover:text-white" aria-label="Más"><Plus className="h-4 w-4" /></button>
               </div>
             </div>
           )}
@@ -150,29 +150,29 @@ export default function ProductoDetallePage() {
           <button
             onClick={() => addToCart(producto, cantidad)}
             disabled={agotado}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-cta-600 px-4 py-2.5 font-semibold text-cta-600 hover:bg-cta-600/5 disabled:opacity-50"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-cta-500/50 px-4 py-2.5 font-semibold text-cta-300 transition-colors hover:bg-cta-500/10 hover:text-cta-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShoppingCart className="h-5 w-5" /> Agregar al carrito
           </button>
           <button
             onClick={comprarAhora}
             disabled={agotado || comprando}
-            className="mt-2 w-full rounded-md bg-cta-600 px-4 py-2.5 font-semibold text-white hover:bg-cta-500 disabled:opacity-50"
+            className="mk-btn-cta mt-2 w-full"
           >
             {comprando ? 'Procesando…' : `Comprar ahora ${formatCurrency(precioMostrar)}`}
           </button>
 
-          <div className="mt-4 border-t border-slate-100 pt-3">
-            <p className="mb-1 text-sm font-semibold text-slate-700">Medios de pago</p>
-            <p className="text-xs text-slate-500">QR (Stereum) · VISA · Mastercard</p>
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <p className="mb-1 text-sm font-semibold text-white">Medios de pago</p>
+            <p className="text-xs text-slate-400">QR (Stereum) · VISA · Mastercard</p>
           </div>
         </div>
       </div>
 
       {/* La combinación perfecta */}
       {(recomendados?.length ?? 0) > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-lg font-semibold text-slate-900">La combinación perfecta</h2>
+        <section className="mt-12">
+          <h2 className="mk-section-title mb-4">La combinación perfecta</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {recomendados?.map((p) => (
               <ProductoCard key={p.id} producto={p} onAdd={addToCart} />
@@ -182,15 +182,15 @@ export default function ProductoDetallePage() {
       )}
 
       {/* Value props */}
-      <section className="mt-10 grid grid-cols-2 gap-4 border-t border-slate-200 pt-6 text-sm text-slate-600 sm:grid-cols-4">
-        <span>Entrega segura y garantizada</span>
-        <span>Recogida en tienda rápida</span>
-        <span>Garantía de precios accesibles</span>
-        <span>Lo último en tecnología</span>
+      <section className="mt-12 grid grid-cols-2 gap-4 border-t border-white/10 pt-8 text-sm text-slate-300 sm:grid-cols-4">
+        <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-brand-300" /> Entrega segura</span>
+        <span className="flex items-center gap-2"><Store className="h-4 w-4 text-brand-300" /> Recogida en tienda</span>
+        <span className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-brand-300" /> Garantía de precios</span>
+        <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-brand-300" /> Lo último en tecnología</span>
       </section>
 
       <div className="mt-6">
-        <Link to="/tienda" className="text-sm text-slate-500 hover:underline">← Seguir comprando</Link>
+        <Link to="/tienda" className="text-sm text-slate-400 transition-colors hover:text-white">← Seguir comprando</Link>
       </div>
     </div>
   );
