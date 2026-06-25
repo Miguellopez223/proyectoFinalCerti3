@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, ChevronDown, User } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Search, ShoppingCart, ShoppingBag, ChevronDown, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useDebounced } from '@/hooks/useDebounced';
@@ -18,6 +18,8 @@ export default function MarketplaceLayout() {
   const { user, logout } = useAuth();
   const { itemCount, openDrawer } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/tienda' || location.pathname === '/tienda/';
 
   const [catOpen, setCatOpen] = useState(false);
   const [categorias, setCategorias] = useState<CategoriaPopular[]>([]);
@@ -70,8 +72,9 @@ export default function MarketplaceLayout() {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <Link
             to="/tienda"
-            className="shrink-0 text-2xl font-black uppercase text-[#ff7a1a] drop-shadow-[0_0_16px_rgba(255,122,26,0.35)] sm:text-3xl"
+            className="flex shrink-0 items-center gap-2 text-2xl font-black uppercase text-[#ff7a1a] drop-shadow-[0_0_16px_rgba(255,122,26,0.35)] sm:text-3xl"
           >
+            {isHome && <ShoppingBag className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2.5} />}
             Klikea
           </Link>
 
@@ -132,6 +135,9 @@ export default function MarketplaceLayout() {
           {/* Cuenta */}
           {user ? (
             <div className="hidden items-center gap-3 sm:flex">
+              <span className="flex items-center gap-1.5 text-sm font-medium text-slate-100">
+                <User className="h-4 w-4 text-[#ff7a1a]" /> {user.nombre}
+              </span>
               <Link to="/tienda/pedidos" className="text-sm text-slate-300 transition-colors hover:text-white">Mis pedidos</Link>
               <button onClick={() => logout()} className="text-sm text-slate-400 transition-colors hover:text-rose-400">Salir</button>
             </div>

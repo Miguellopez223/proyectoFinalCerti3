@@ -41,12 +41,12 @@ npm run build      # tsc --noEmit type-check + vite build
 npm run typecheck  # type-check only
 ```
 
-**Prerequisites**: Java 21; PostgreSQL on port 5432 with database `ecommerce`; Node for the frontend.
+**Prerequisites**: Java 21; PostgreSQL on port 5432 with database `ecommerceUPB`; Node for the frontend.
 
 **One-time DB setup**: the Quartz tables (`qrtz_*`) are **not** auto-created. Run the script once before first startup, or the app fails to boot:
 
 ```bash
-psql -U postgres -d ecommerce -f script/quartz.sql
+psql -U postgres -d ecommerceUPB -f script/quartz.sql
 ```
 
 ## Architecture
@@ -115,7 +115,7 @@ Quartz cron uses the **7-field Quartz format** (`sec min hour day month day-of-w
 
 Main config: `ecommerce-api/src/main/resources/application.properties`. A `local` profile (`application-local.properties`) overrides credentials for local development — activate with `-Dspring-boot.run.profiles=local` (preferred over global Windows env vars).
 
-- Server port `8081`; DB `jdbc:postgresql://localhost:5432/ecommerce` (user `postgre`)
+- Server port `8081`; DB `jdbc:postgresql://localhost:5432/ecommerceUPB` (user `postgres`)
 - JWT secret (Base64) and expiration (minutes)
 - `google.oauth.client-id` (env `GOOGLE_CLIENT_ID`) — must match the frontend OAuth client
 - Stereum API base URL + key + timeouts

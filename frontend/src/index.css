@@ -389,6 +389,129 @@ html.light .mk-select {
 }
 html.light .mk-select option { background: #ffffff !important; color: #0f172a !important; }
 
+/* Carta del showcase "Destacados" (StackingProducts): fondo negro literal que el
+   override genérico no alcanza. En claro: superficie blanca legible y elegante. */
+html.light .stack-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 28px 70px -24px rgba(15, 23, 42, 0.25) !important;
+}
+
+/* ── Panel admin — estética KLIKEA (negro + naranja), claro/oscuro ─────
+   El admin usa utilidades claras (bg-white, text-slate-*, etc.). En MODO OSCURO
+   el contenedor lleva además `.admin-dark` y reasignamos esas utilidades a
+   superficies oscuras. En MODO CLARO no está `.admin-dark` → vuelve a su diseño
+   claro original. El acento es naranja en ambos modos. El sidebar y el topbar
+   quedan siempre oscuros. Puramente visual: no cambia estructura ni lógica. */
+.admin-shell { position: relative; isolation: isolate; min-height: 100vh; }
+.admin-shell:not(.admin-dark) { background-color: #f1f5f9; }
+
+/* Lienzo oscuro (cálido) */
+.admin-dark { background-color: #0c0c0c; color: #e2e8f0; }
+.admin-dark::before,
+.admin-dark::after { content: ''; position: fixed; inset: -25%; z-index: -1; pointer-events: none; }
+.admin-dark::before {
+  background:
+    radial-gradient(34% 46% at 18% 14%, rgba(231, 161, 73, 0.16) 0%, transparent 60%),
+    radial-gradient(38% 50% at 88% 24%, rgba(196, 74, 26, 0.14) 0%, transparent 62%);
+}
+.admin-dark::after {
+  background:
+    radial-gradient(34% 46% at 84% 82%, rgba(196, 99, 29, 0.12) 0%, transparent 60%),
+    radial-gradient(40% 50% at 10% 84%, rgba(214, 120, 44, 0.12) 0%, transparent 60%);
+}
+
+/* Chrome siempre oscuro */
+.admin-sidebar { background-color: #0a0a0a; border-color: rgba(255, 255, 255, 0.08); }
+.admin-topbar  { background-color: rgba(12, 12, 12, 0.72); border-color: rgba(255, 255, 255, 0.1); }
+
+/* Acento NARANJA — reemplaza el cian del brand (ambos modos) */
+.admin-shell .bg-brand-600 { background-color: #c4631d !important; }
+.admin-shell .hover\:bg-brand-700:hover { background-color: #9a4d12 !important; }
+.admin-shell .bg-brand-50 { background-color: rgba(231, 161, 73, 0.16) !important; }
+.admin-shell .border-brand-100 { border-color: rgba(231, 161, 73, 0.4) !important; }
+.admin-shell .ring-brand-100 { --tw-ring-color: rgba(231, 161, 73, 0.4) !important; }
+.admin-shell .text-brand-700, .admin-shell .text-brand-600 { color: #c4631d !important; }
+.admin-shell .focus\:border-brand-500:focus { border-color: #e7a149 !important; }
+.admin-shell .focus\:ring-brand-500\/30:focus,
+.admin-shell .focus\:ring-brand-500\/25:focus,
+.admin-shell .focus-visible\:ring-brand-500:focus-visible { --tw-ring-color: rgba(231, 161, 73, 0.4) !important; }
+.admin-dark .text-brand-700, .admin-dark .text-brand-600 { color: #f0a955 !important; }
+
+/* ===== MODO OSCURO: utilidades claras → superficies/tonos oscuros ===== */
+.admin-dark .bg-white       { background-color: rgba(20, 22, 28, 0.92) !important; }
+.admin-dark .bg-slate-50    { background-color: rgba(255, 255, 255, 0.03) !important; }
+.admin-dark .bg-slate-100   { background-color: rgba(255, 255, 255, 0.08) !important; }
+.admin-dark .bg-slate-200   { background-color: rgba(255, 255, 255, 0.08) !important; }
+.admin-dark .bg-slate-50\/60 { background-color: rgba(255, 255, 255, 0.04) !important; }
+.admin-dark .bg-red-50\/60   { background-color: rgba(239, 68, 68, 0.12) !important; }
+
+.admin-dark .text-slate-900, .admin-dark .text-slate-800 { color: #f1f5f9 !important; }
+.admin-dark .text-slate-700, .admin-dark .text-slate-600 { color: #cbd5e1 !important; }
+.admin-dark .text-slate-500, .admin-dark .text-slate-400 { color: #94a3b8 !important; }
+
+.admin-dark .border-slate-200,
+.admin-dark .border-slate-300,
+.admin-dark .border-slate-100 { border-color: rgba(255, 255, 255, 0.1) !important; }
+
+.admin-dark .card-base {
+  background-color: rgba(20, 22, 28, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 40px -12px rgba(0, 0, 0, 0.6) !important;
+}
+.admin-dark .input-base {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+}
+.admin-dark .input-base::placeholder { color: #64748b !important; }
+.admin-dark .input-base:disabled { background-color: rgba(255, 255, 255, 0.03) !important; color: #64748b !important; }
+.admin-dark .label-base { color: #cbd5e1 !important; }
+.admin-dark select.input-base option { background-color: #14161b; color: #f1f5f9; }
+
+.admin-dark .hover\:bg-slate-50:hover,
+.admin-dark .hover\:bg-slate-100:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+.admin-dark .hover\:bg-slate-50\/70:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+
+/* Chips/badges pastel → tinte oscuro del mismo color con texto claro */
+.admin-dark .bg-red-50    { background-color: rgba(239, 68, 68, 0.14) !important; }
+.admin-dark .bg-amber-50  { background-color: rgba(245, 158, 11, 0.14) !important; }
+.admin-dark .bg-cta-50    { background-color: rgba(34, 197, 94, 0.14) !important; }
+.admin-dark .bg-blue-50   { background-color: rgba(59, 130, 246, 0.14) !important; }
+
+.admin-dark .text-red-700,   .admin-dark .text-red-600   { color: #fca5a5 !important; }
+.admin-dark .text-amber-700, .admin-dark .text-amber-600 { color: #fcd34d !important; }
+.admin-dark .text-cta-700,   .admin-dark .text-cta-600   { color: #86efac !important; }
+.admin-dark .text-blue-700,  .admin-dark .text-blue-600  { color: #93c5fd !important; }
+
+.admin-dark .border-red-200   { border-color: rgba(239, 68, 68, 0.3) !important; }
+.admin-dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.3) !important; }
+.admin-dark .border-cta-100,
+.admin-dark .border-cta-200   { border-color: rgba(34, 197, 94, 0.3) !important; }
+.admin-dark .border-blue-200  { border-color: rgba(59, 130, 246, 0.3) !important; }
+
+.admin-dark .ring-slate-200 { --tw-ring-color: rgba(255, 255, 255, 0.14) !important; }
+.admin-dark .ring-red-200   { --tw-ring-color: rgba(239, 68, 68, 0.35) !important; }
+.admin-dark .ring-amber-200 { --tw-ring-color: rgba(245, 158, 11, 0.35) !important; }
+.admin-dark .ring-cta-100   { --tw-ring-color: rgba(34, 197, 94, 0.35) !important; }
+.admin-dark .ring-blue-200  { --tw-ring-color: rgba(59, 130, 246, 0.35) !important; }
+
+/* ── Logo fundido con el fondo ───────────────────────────────────────
+   El PNG del logo tiene fondo oscuro rectangular. Esta máscara desvanece
+   sus 4 bordes a transparente, así se fusiona con el lienzo sin cortes
+   duros (acabado premium). La intersección de ambos gradientes suaviza
+   también las esquinas. */
+.logo-blend {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  mask-composite: intersect;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
