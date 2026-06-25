@@ -92,7 +92,7 @@ function StackCard({
     <div className="sticky top-24 flex items-center justify-center md:top-28">
       <motion.article
         style={{ scale, top: `${index * 22}px` }}
-        className="relative mx-auto w-full max-w-3xl origin-top overflow-hidden rounded-[26px] border-2 border-[#D7E2EA]/60 bg-[#0C0C0C] p-3.5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] sm:rounded-[32px] sm:p-5"
+        className="relative mx-auto w-full max-w-4xl origin-top overflow-hidden rounded-[26px] border-2 border-[#D7E2EA]/60 bg-[#0C0C0C] p-3.5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] sm:rounded-[32px] sm:p-5"
       >
         {/* Top row — number + name, compact */}
         <div className="mb-3.5 flex items-center justify-between gap-3 sm:mb-4">
@@ -130,12 +130,12 @@ function StackCard({
         </div>
 
         {/* Bottom row — image + minimal details */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
-          <div className="aspect-[16/10] overflow-hidden rounded-[20px] bg-black/40 sm:col-span-3 sm:aspect-auto sm:rounded-[24px]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(360px,1fr)_minmax(220px,300px)] lg:grid-cols-[minmax(480px,1fr)_minmax(240px,310px)]">
+          <div className="aspect-square overflow-hidden rounded-[20px] bg-black/40 sm:rounded-[24px]">
             <ProductImage src={p.imagenUrl} alt={p.nombre} className="h-full w-full" />
           </div>
 
-          <div className="flex flex-col justify-between gap-4 rounded-[20px] border border-white/10 bg-white/[0.03] p-4 sm:col-span-2 sm:rounded-[24px]">
+          <div className="flex flex-col justify-between gap-4 rounded-[20px] border border-white/10 bg-white/[0.03] p-4 sm:rounded-[24px]">
             <div>
               {p.descripcionLarga && (
                 <p className="mb-3 line-clamp-3 text-sm font-light leading-relaxed text-[#D7E2EA]/65">

@@ -1,12 +1,14 @@
 package com.upb.ecommerce.api.controller;
 
 import com.upb.ecommerce.core.dto.request.ProductoRequest;
+import com.upb.ecommerce.core.dto.response.ProductoImportResponse;
 import com.upb.ecommerce.core.dto.response.ProductoResponse;
 import com.upb.ecommerce.core.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,7 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "Productos", description = "Catálogo interno de productos por tienda (alta/baja/edición requiere rol ADMIN)")
@@ -67,6 +72,21 @@ public class ProductoController {
     @PostMapping
     public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.crear(request));
+    }
+
+    @Operation(summary = "Importar productos desde CSV", description = "Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductoImportResponse> importarCsv(@RequestParam("tiendaId") Long tiendaId,
+                                                              @RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debes seleccionar un archivo CSV.");
+        }
+        try {
+            return ResponseEntity.ok(productoService.importarCsv(tiendaId, file.getInputStream()));
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo leer el archivo CSV.", ex);
+        }
     }
 
     @Operation(summary = "Actualizar un producto", description = "Requiere rol ADMIN.")

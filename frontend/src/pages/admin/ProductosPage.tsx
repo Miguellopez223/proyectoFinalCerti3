@@ -17,6 +17,7 @@ import { useToast } from '@/context/ToastContext';
 import { formatCurrency } from '@/lib/format';
 import { useDebounced } from '@/hooks/useDebounced';
 import { ProductoFormModal } from './ProductoFormModal';
+import { ProductoImportModal } from './ProductoImportModal';
 import { AtributosModal } from './AtributosModal';
 import { IconPlus, IconEdit, IconTrash, IconSearch, IconTag, IconBox } from '@/components/icons';
 import type { Producto } from '@/types';
@@ -50,6 +51,7 @@ export default function ProductosPage() {
   );
 
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
   const [attrProducto, setAttrProducto] = useState<Producto | null>(null);
 
@@ -93,9 +95,14 @@ export default function ProductosPage() {
         title="Productos"
         description="Gestiona el catálogo de tu tienda."
         actions={
-          <Button leftIcon={<IconPlus className="h-4 w-4" />} onClick={openCreate}>
-            Nuevo producto
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Importar CSV
+            </Button>
+            <Button leftIcon={<IconPlus className="h-4 w-4" />} onClick={openCreate}>
+              Nuevo producto
+            </Button>
+          </div>
         }
       />
 
@@ -225,6 +232,12 @@ export default function ProductosPage() {
         onSaved={reload}
         tiendaId={tiendaId}
         producto={editing}
+      />
+      <ProductoImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={reload}
+        tiendaId={tiendaId}
       />
       <AtributosModal open={!!attrProducto} onClose={() => setAttrProducto(null)} producto={attrProducto} />
       {dialog}

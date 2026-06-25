@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Page, Producto, ProductoRequest } from '@/types';
+import type { Page, Producto, ProductoImportResponse, ProductoRequest } from '@/types';
 
 export interface ListarPaginadoParams {
   page?: number;
@@ -34,6 +34,18 @@ export const productosApi = {
 
   crear: (body: ProductoRequest) =>
     api.post<Producto>('/api/productos', body).then((r) => r.data),
+
+  importarCsv: (tiendaId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('tiendaId', String(tiendaId));
+    formData.append('file', file);
+
+    return api
+      .post<ProductoImportResponse>('/api/productos/importar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 
   actualizar: (id: number, body: ProductoRequest) =>
     api.put<Producto>(`/api/productos/${id}`, body).then((r) => r.data),

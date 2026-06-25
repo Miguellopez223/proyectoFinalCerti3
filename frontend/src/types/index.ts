@@ -142,6 +142,19 @@ export interface ProductoRequest {
   imagenUrl?: string;
 }
 
+export interface ProductoImportError {
+  fila: number;
+  campo: string;
+  mensaje: string;
+}
+
+export interface ProductoImportResponse {
+  totalFilas: number;
+  importados: number;
+  fallidos: number;
+  errores: ProductoImportError[];
+}
+
 // --- Atributos de producto -------------------------------------------------
 export interface AtributoProducto {
   id: number;

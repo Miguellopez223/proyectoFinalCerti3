@@ -68,7 +68,12 @@ export default function MarketplaceLayout() {
       {/* Navbar */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0c0c0c]/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
-          <Link to="/tienda" className="hero-heading text-2xl font-black tracking-tight">Klikea</Link>
+          <Link
+            to="/tienda"
+            className="shrink-0 text-2xl font-black uppercase text-[#ff7a1a] drop-shadow-[0_0_16px_rgba(255,122,26,0.35)] sm:text-3xl"
+          >
+            Klikea
+          </Link>
 
           {/* Menú Categorías */}
           <div className="relative">

@@ -1,8 +1,11 @@
 package com.upb.ecommerce.core.service;
 
 import com.upb.ecommerce.core.dto.request.ProductoRequest;
+import com.upb.ecommerce.core.dto.response.ProductoImportError;
+import com.upb.ecommerce.core.dto.response.ProductoImportResponse;
 import com.upb.ecommerce.core.dto.response.ProductoResponse;
 import com.upb.ecommerce.core.exception.NotDataFoundException;
+import com.upb.ecommerce.core.exception.OperationException;
 import com.upb.ecommerce.data.repository.CategoriaRepository;
 import com.upb.ecommerce.data.repository.ProductoRepository;
 import com.upb.ecommerce.data.repository.TiendaRepository;
@@ -19,8 +22,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class ProductoService {
@@ -73,6 +90,62 @@ public class ProductoService {
         Tienda tienda = tiendaRepository.findById(request.getTiendaId())
                 .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
 
+        return ProductoResponse.fromEntity(productoRepository.save(toEntity(request, tienda)));
+    }
+
+    @CacheEvict(value = "catalogo", allEntries = true)
+    @Transactional
+    public ProductoImportResponse importarCsv(Long tiendaId, InputStream inputStream) {
+        Tienda tienda = tiendaRepository.findById(tiendaId)
+                .orElseThrow(() -> new NotDataFoundException("Tienda no encontrada"));
+
+        List<ProductoImportError> errores = new ArrayList<>();
+        int totalFilas = 0;
+        int importados = 0;
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String headerLine = reader.readLine();
+            if (!StringUtils.hasText(headerLine)) {
+                throw new OperationException("El CSV esta vacio.");
+            }
+
+            char delimiter = detectDelimiter(headerLine);
+            List<String> headers = parseCsvLine(stripBom(headerLine), delimiter);
+            Map<String, Integer> index = indexHeaders(headers);
+            validateRequiredHeader(index, "nombre");
+            validateRequiredHeader(index, "precio");
+            validateRequiredHeader(index, "stock");
+
+            String line;
+            int fila = 1;
+            while ((line = reader.readLine()) != null) {
+                fila++;
+                if (!StringUtils.hasText(line)) {
+                    continue;
+                }
+                totalFilas++;
+                try {
+                    ProductoRequest request = buildRequestFromCsv(tiendaId, line, delimiter, index);
+                    if (!StringUtils.hasText(request.getSlugProducto())) {
+                        request.setSlugProducto(slugify(request.getNombre()));
+                    }
+                    if (productoRepository.findBySlugProductoAndTiendaId(request.getSlugProducto(), tiendaId).isPresent()) {
+                        throw new OperationException("Ya existe un producto con slug '" + request.getSlugProducto() + "'.");
+                    }
+                    productoRepository.save(toEntity(request, tienda));
+                    importados++;
+                } catch (Exception ex) {
+                    errores.add(new ProductoImportError(fila, "", ex.getMessage()));
+                }
+            }
+        } catch (IOException ex) {
+            throw new OperationException("No se pudo leer el archivo CSV.");
+        }
+
+        return new ProductoImportResponse(totalFilas, importados, errores.size(), errores);
+    }
+
+    private Producto toEntity(ProductoRequest request, Tienda tienda) {
         Producto producto = new Producto();
         producto.setTienda(tienda);
         producto.setNombre(request.getNombre());
@@ -93,7 +166,7 @@ public class ProductoService {
             producto.setCategoria(cat);
         }
         producto.setUnidadMedida(resolverUnidad(request.getUnidadMedidaId()));
-        return ProductoResponse.fromEntity(productoRepository.save(producto));
+        return producto;
     }
 
     // Refresca la entrada del producto en cache y, ademas, invalida el catalogo (precio,
@@ -133,6 +206,199 @@ public class ProductoService {
         if (unidadMedidaId == null) return null;
         return unidadMedidaRepository.findById(unidadMedidaId)
                 .orElseThrow(() -> new NotDataFoundException("Unidad de medida no encontrada"));
+    }
+
+    private ProductoRequest buildRequestFromCsv(Long tiendaId, String line, char delimiter, Map<String, Integer> index) {
+        List<String> values = parseCsvLine(line, delimiter);
+        ProductoRequest request = new ProductoRequest();
+        request.setTiendaId(tiendaId);
+        request.setNombre(required(values, index, "nombre"));
+        request.setSlugProducto(optional(values, index, "slugproducto"));
+        request.setDescripcionLarga(firstOptional(values, index, "descripcionlarga", "descripcion"));
+        request.setPrecio(parseBigDecimal(required(values, index, "precio"), "precio"));
+        request.setPrecioCosto(parseOptionalBigDecimal(firstOptional(values, index, "preciocosto", "costo"), "precioCosto"));
+        request.setPrecioOferta(parseOptionalBigDecimal(firstOptional(values, index, "preciooferta", "oferta"), "precioOferta"));
+        request.setOfertaInicio(parseOptionalDate(firstOptional(values, index, "ofertainicio", "iniciodeoferta"), "ofertaInicio"));
+        request.setOfertaFin(parseOptionalDate(firstOptional(values, index, "ofertafin", "findeoferta"), "ofertaFin"));
+        request.setStock(parseInteger(required(values, index, "stock"), "stock"));
+        request.setStockMinimo(parseOptionalInteger(firstOptional(values, index, "stockminimo", "minimo"), "stockMinimo"));
+        request.setImagenUrl(firstOptional(values, index, "imagenurl", "imagen", "urlimagen"));
+        request.setCategoriaId(resolveCategoriaId(tiendaId, values, index));
+        request.setUnidadMedidaId(resolveUnidadMedidaId(tiendaId, values, index));
+        return request;
+    }
+
+    private Long resolveCategoriaId(Long tiendaId, List<String> values, Map<String, Integer> index) {
+        Long id = parseOptionalLong(firstOptional(values, index, "categoriaid", "idcategoria"), "categoriaId");
+        if (id != null) return id;
+
+        String nombre = firstOptional(values, index, "categorianombre", "categoria");
+        if (!StringUtils.hasText(nombre)) return null;
+        return categoriaRepository.findByTiendaIdAndEstadoTrue(tiendaId).stream()
+                .filter(c -> c.getNombre().equalsIgnoreCase(nombre.trim()))
+                .findFirst()
+                .map(Categoria::getId)
+                .orElseThrow(() -> new OperationException("No existe la categoria '" + nombre + "'. Usa categoriaId o crea la categoria primero."));
+    }
+
+    private Long resolveUnidadMedidaId(Long tiendaId, List<String> values, Map<String, Integer> index) {
+        Long id = parseOptionalLong(firstOptional(values, index, "unidadmedidaid", "idunidadmedida"), "unidadMedidaId");
+        if (id != null) return id;
+
+        String nombre = firstOptional(values, index, "unidadmedidanombre", "unidadmedida", "unidad");
+        if (!StringUtils.hasText(nombre)) return null;
+        return unidadMedidaRepository.findByTiendaIdAndEstadoTrue(tiendaId).stream()
+                .filter(u -> u.getNombre().equalsIgnoreCase(nombre.trim()))
+                .findFirst()
+                .map(UnidadMedida::getId)
+                .orElseThrow(() -> new OperationException("No existe la unidad de medida '" + nombre + "'. Usa unidadMedidaId o crea la unidad primero."));
+    }
+
+    private char detectDelimiter(String headerLine) {
+        long semicolons = headerLine.chars().filter(c -> c == ';').count();
+        long commas = headerLine.chars().filter(c -> c == ',').count();
+        return semicolons > commas ? ';' : ',';
+    }
+
+    private String stripBom(String value) {
+        return value != null && value.startsWith("\uFEFF") ? value.substring(1) : value;
+    }
+
+    private List<String> parseCsvLine(String line, char delimiter) {
+        List<String> values = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean quoted = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                if (quoted && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    current.append('"');
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else if (c == delimiter && !quoted) {
+                values.add(current.toString().trim());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        values.add(current.toString().trim());
+        return values;
+    }
+
+    private Map<String, Integer> indexHeaders(List<String> headers) {
+        Map<String, Integer> index = new HashMap<>();
+        for (int i = 0; i < headers.size(); i++) {
+            String key = normalizeHeader(headers.get(i));
+            if (StringUtils.hasText(key)) {
+                index.put(key, i);
+            }
+        }
+        return index;
+    }
+
+    private String normalizeHeader(String value) {
+        if (value == null) {
+            return "";
+        }
+        String withoutAccents = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return withoutAccents.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private void validateRequiredHeader(Map<String, Integer> index, String header) {
+        if (!index.containsKey(header)) {
+            throw new OperationException("Falta la columna obligatoria '" + header + "'.");
+        }
+    }
+
+    private String required(List<String> values, Map<String, Integer> index, String key) {
+        String value = optional(values, index, key);
+        if (!StringUtils.hasText(value)) {
+            throw new OperationException("El campo '" + key + "' es obligatorio.");
+        }
+        return value;
+    }
+
+    private String firstOptional(List<String> values, Map<String, Integer> index, String... keys) {
+        for (String key : keys) {
+            String value = optional(values, index, key);
+            if (StringUtils.hasText(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String optional(List<String> values, Map<String, Integer> index, String key) {
+        Integer position = index.get(key);
+        if (position == null || position >= values.size()) {
+            return null;
+        }
+        String value = values.get(position);
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private BigDecimal parseBigDecimal(String value, String field) {
+        try {
+            BigDecimal parsed = new BigDecimal(value.replace(",", "."));
+            if (parsed.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new OperationException("El campo '" + field + "' debe ser mayor a 0.");
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new OperationException("El campo '" + field + "' debe ser numerico.");
+        }
+    }
+
+    private BigDecimal parseOptionalBigDecimal(String value, String field) {
+        return StringUtils.hasText(value) ? parseBigDecimal(value, field) : null;
+    }
+
+    private Integer parseInteger(String value, String field) {
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed < 0) {
+                throw new OperationException("El campo '" + field + "' no puede ser negativo.");
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new OperationException("El campo '" + field + "' debe ser entero.");
+        }
+    }
+
+    private Integer parseOptionalInteger(String value, String field) {
+        return StringUtils.hasText(value) ? parseInteger(value, field) : null;
+    }
+
+    private Long parseOptionalLong(String value, String field) {
+        if (!StringUtils.hasText(value)) return null;
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            throw new OperationException("El campo '" + field + "' debe ser entero.");
+        }
+    }
+
+    private LocalDateTime parseOptionalDate(String value, String field) {
+        if (!StringUtils.hasText(value)) return null;
+        try {
+            return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (RuntimeException ex) {
+            throw new OperationException("El campo '" + field + "' debe tener formato yyyy-MM-ddTHH:mm.");
+        }
+    }
+
+    private String slugify(String value) {
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
+        return StringUtils.hasText(normalized) ? normalized : "producto";
     }
 
     // Al eliminar (baja logica) saca el producto de su cache y ademas invalida el catalogo.

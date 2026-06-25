@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/cn';
-import { IconCart, IconStore, IconReceipt, IconLogout, IconUser } from '@/components/icons';
+import { IconCart, IconReceipt, IconLogout, IconUser } from '@/components/icons';
 
 export default function TiendaLayout() {
   const { user, logout } = useAuth();
@@ -32,13 +32,7 @@ export default function TiendaLayout() {
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
           {/* Logo */}
           <Link to="/tienda" className="group flex items-center gap-2.5">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-lg shadow-[#c4631d]/40 transition-transform duration-200 group-hover:scale-105"
-              style={{ background: 'linear-gradient(123deg, #7a3310 0%, #c4631d 55%, #e7a149 100%)' }}
-            >
-              <IconStore className="h-5 w-5" />
-            </span>
-            <span className="truncate text-base font-semibold uppercase tracking-wide text-[#D7E2EA] drop-shadow">
+            <span className="text-2xl font-black uppercase text-[#ff7a1a] drop-shadow-[0_0_16px_rgba(255,122,26,0.35)] transition-transform duration-200 group-hover:scale-105 sm:text-3xl">
               Klikea
             </span>
           </Link>

@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="mt-16 border-t border-white/10 bg-[#0a0a0a]/60 py-12 backdrop-blur-sm">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 sm:px-6 md:grid-cols-3">
         <div>
-          <p className="hero-heading text-2xl font-black tracking-tight">Klikea</p>
+          <img src="/logo-klikea.png" alt="Klikea" className="h-20 w-auto object-contain" />
           <p className="mt-4 max-w-xs text-sm text-slate-400">El marketplace multitienda: productos de todas las tiendas, en un solo lugar.</p>
           <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Redes sociales</p>
           <div className="mt-2 flex flex-wrap gap-2">

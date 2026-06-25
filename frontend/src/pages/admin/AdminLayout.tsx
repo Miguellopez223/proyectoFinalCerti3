@@ -52,11 +52,9 @@ export default function AdminLayout() {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">
-          <IconStore className="h-5 w-5" />
-        </span>
+        <img src="/logo-klikea.png" alt="Klikea" className="h-12 w-20 rounded-md object-contain" />
         <div className="leading-tight">
-          <p className="text-sm font-semibold text-white">MultiTienda</p>
+          <p className="text-sm font-semibold text-white">Klikea</p>
           <p className="text-xs text-brand-200">Panel del dueño</p>
         </div>
       </div>
