@@ -59,18 +59,18 @@ export default function StorePage() {
 
   return (
     <div>
-      <p className="mb-2 text-sm text-slate-400">Inicio / {tienda?.nombre}</p>
+      <p className="mb-3 text-sm text-slate-500">Inicio / <span className="text-slate-400">{tienda?.nombre}</span></p>
 
       {/* Cabecera de la tienda */}
       <div
-        className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white bg-cover bg-center"
+        className="relative mb-6 overflow-hidden rounded-3xl border border-white/10 bg-cover bg-center"
         style={tienda?.bannerUrl ? { backgroundImage: `url(${tienda.bannerUrl})` } : undefined}
       >
-        <div className="flex items-center gap-4 bg-white/80 p-5">
-          <ProductImage src={tienda?.logoUrl ?? undefined} alt={tienda?.nombre ?? 'Tienda'} className="h-20 w-20 rounded-full border border-slate-200" />
+        <div className="flex items-center gap-5 bg-gradient-to-r from-[#0c0c0c]/95 via-[#0c0c0c]/80 to-[#0c0c0c]/55 p-6 sm:p-8 backdrop-blur-[2px]">
+          <ProductImage src={tienda?.logoUrl ?? undefined} alt={tienda?.nombre ?? 'Tienda'} className="h-20 w-20 shrink-0 rounded-full bg-white/5 ring-2 ring-white/15 sm:h-24 sm:w-24" />
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{tienda?.nombre}</h1>
-            {tienda?.descripcion && <p className="text-sm text-slate-500">{tienda.descripcion}</p>}
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">{tienda?.nombre}</h1>
+            {tienda?.descripcion && <p className="mt-1 max-w-lg text-sm text-slate-300">{tienda.descripcion}</p>}
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function StorePage() {
         <div className="mb-6 flex flex-wrap gap-2">
           <button
             onClick={() => setCategoriaId(null)}
-            className={`rounded-full border px-4 py-1.5 text-sm ${categoriaId == null ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+            className={`mk-chip ${categoriaId == null ? 'mk-chip-active' : ''}`}
           >
             Todo
           </button>
@@ -88,7 +88,7 @@ export default function StorePage() {
             <button
               key={c.id}
               onClick={() => setCategoriaId(c.id)}
-              className={`rounded-full border px-4 py-1.5 text-sm ${categoriaId === c.id ? 'border-slate-800 bg-slate-800 text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+              className={`mk-chip ${categoriaId === c.id ? 'mk-chip-active' : ''}`}
             >
               {c.nombre}
             </button>
@@ -97,11 +97,11 @@ export default function StorePage() {
       )}
 
       {/* Orden */}
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm text-slate-500">{visibles.length} productos</span>
-        <label className="text-sm text-slate-600">
-          Ordenar por:{' '}
-          <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-sm text-slate-400">{visibles.length} productos</span>
+        <label className="flex items-center gap-2 text-sm text-slate-400">
+          Ordenar por:
+          <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className="mk-select">
             {ORDENES.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}

@@ -20,4 +20,6 @@ public class EcommerceApplication {
     public static void main(String[] args) {
         SpringApplication.run(EcommerceApplication.class, args);
     }
+    //hay que iniciarlo asi en cli
+    //   .\mvnw.cmd spring-boot:run -pl ecommerce-api "-Dspring-boot.run.profiles=local"
 }

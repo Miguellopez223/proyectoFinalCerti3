@@ -117,8 +117,23 @@ export default function MiTiendaPage() {
           </Card>
         }
       >
-        <Card className="p-5 sm:p-6">
-          <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card className="overflow-hidden p-0">
+          {/* Vista previa de la cabecera tal como se ve en el marketplace */}
+          <div
+            className="relative bg-cover bg-center"
+            style={form.bannerUrl ? { backgroundImage: `url(${form.bannerUrl})` } : { backgroundColor: '#0c0c0c' }}
+          >
+            <div className="flex items-center gap-4 bg-gradient-to-r from-[#0c0c0c]/95 via-[#0c0c0c]/80 to-[#0c0c0c]/50 p-5 sm:p-6">
+              <ProductImage src={form.logoUrl || undefined} alt="Logo" className="h-16 w-16 shrink-0 rounded-full bg-white/5 ring-2 ring-white/15" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-300/80">Vista previa</p>
+                <h2 className="truncate text-xl font-black tracking-tight text-white">{form.nombre || 'Nombre de tu tienda'}</h2>
+                {form.descripcion && <p className="line-clamp-1 text-sm text-slate-300">{form.descripcion}</p>}
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
             <Input
               className="sm:col-span-2"
               label="Nombre de la tienda"

@@ -54,7 +54,9 @@ export default function CatalogoPage() {
   const [addingId, setAddingId] = useState<number | null>(null);
 
   const allProducts = user ? (productosState.data ?? []) : (catalogoState.data?.productos ?? []);
-  const storeName = user ? BRAND : (catalogoState.data?.tienda.nombre ?? tiendaPublica?.nombre ?? BRAND);
+  // El hero y los títulos display siempre llevan la marca KLIKEA (no el nombre
+  // interno de la tienda), para una identidad consistente en todo el storefront.
+  const storeName = BRAND;
   const loading = tiendasState.loading || catalogoState.loading || (user && productosState.loading);
   const error = tiendasState.error || catalogoState.error || productosState.error;
 

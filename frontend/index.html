@@ -13,6 +13,16 @@
     <title>MultiTienda — Ecommerce</title>
   </head>
   <body>
+    <script>
+      // Aplica el tema guardado antes de pintar para evitar el parpadeo.
+      (function () {
+        try {
+          if (localStorage.getItem('klikea.theme') === 'light') {
+            document.documentElement.classList.add('light');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

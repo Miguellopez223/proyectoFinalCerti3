@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthShell } from '@/components/AuthShell';
-import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Field';
+import { AuthInput, AuthSelect } from '@/components/AuthField';
+import { GradientPill } from '@/components/landing/PillButton';
 import { tiendasApi } from '@/api/tiendas';
 import { usuariosApi } from '@/api/usuarios';
 import { useToast } from '@/context/ToastContext';
@@ -74,12 +74,12 @@ export default function RegisterPage() {
   return (
     <AuthShell>
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-slate-900">Crear cuenta de cliente</h2>
-        <p className="mt-1 text-sm text-slate-500">Regístrate para comprar en tu tienda.</p>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Crear cuenta</h2>
+        <p className="mt-1.5 text-sm text-slate-400">Regístrate para comprar en tu tienda.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <Select
+        <AuthSelect
           label="Tienda"
           required
           value={form.tiendaId}
@@ -93,21 +93,21 @@ export default function RegisterPage() {
               {t.nombre}
             </option>
           ))}
-        </Select>
+        </AuthSelect>
 
-        <Input label="Nombre completo" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} error={errors.nombre} required />
-        <Input label="Email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={errors.email} required />
-        <Input label="Contraseña" type="password" autoComplete="new-password" value={form.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="Mínimo 6 caracteres." required />
-        <Input label="WhatsApp (opcional)" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} placeholder="+591 7xxxxxxx" />
+        <AuthInput label="Nombre completo" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} error={errors.nombre} required />
+        <AuthInput label="Email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={errors.email} required />
+        <AuthInput label="Contraseña" type="password" autoComplete="new-password" value={form.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="Mínimo 6 caracteres." required />
+        <AuthInput label="WhatsApp (opcional)" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} placeholder="+591 7xxxxxxx" />
 
-        <Button type="submit" className="w-full" size="lg" loading={submitting}>
-          Crear cuenta
-        </Button>
+        <GradientPill type="submit" disabled={submitting} className="mt-2 w-full">
+          {submitting ? 'Creando…' : 'Crear cuenta'}
+        </GradientPill>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-slate-400">
         ¿Ya tienes cuenta?{' '}
-        <Link to="/login" className="font-medium text-brand-600 hover:text-brand-700">
+        <Link to="/login" className="font-semibold text-[#e7a149] transition-colors hover:text-[#f4c178]">
           Inicia sesión
         </Link>
       </p>

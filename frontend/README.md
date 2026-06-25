@@ -106,6 +106,67 @@ src/
 
 ---
 
+## Experiencia visual del storefront (KLIKEA)
+
+El storefront (`/tienda` y el catálogo público `/catalogo/:slug`) usa una capa de
+componentes "landing" en `src/components/landing/` construidos con
+**framer-motion**. Dos de ellos definen la identidad de **KLIKEA** y son las
+secciones estrella de la página de catálogo (`pages/tienda/CatalogoPage.tsx`).
+
+### 1. Hero KLIKEA — campo de productos magnético
+
+> La marca **KLIKEA** sobre un fondo de productos que flotan y reaccionan al mouse.
+
+- **Componentes:** `landing/HeroProductField.tsx` + `landing/Magnet.tsx`.
+- **Qué hace:** varias miniaturas de productos reales se reparten por el hero
+  (esquinas y laterales, lejos del centro donde va el título). Todo el campo
+  está envuelto en `Magnet`, que **sigue suavemente al cursor** dándole un efecto
+  de paralaje 3D: las imágenes se desplazan hacia el puntero y vuelven a su sitio
+  al alejarlo.
+- **Rotación sin repetidos:** una miniatura a la vez hace un *cross-fade* lento a
+  un producto nuevo (`FADE_MS`/`INTERVAL_MS`), garantizando que nunca se muestre
+  dos veces el mismo producto en pantalla. Solo rota si hay más productos que
+  espacios visibles.
+- **Marca:** el título grande siempre muestra **KLIKEA** (constante `BRAND` en
+  `CatalogoPage.tsx`), no el nombre interno de la tienda, para mantener una
+  identidad consistente. Aparece con `AnimatedText`/`FadeIn` sobre el campo de
+  productos, junto al claim *"Una experiencia de compra hecha para sorprender y
+  deleitar"* y el botón **Explorar** (`GradientPill`) que hace scroll al catálogo.
+- **Datos:** se alimenta de `heroPool` (productos con `imagenUrl`). En modo logueado
+  toma `productosApi.listarPorTienda`; en público, `catalogoApi.porSlug`.
+- **Interacción:** con `onSelect`, hacer clic en una miniatura navega al detalle
+  del producto.
+
+### 2. Destacados apilados al hacer scroll (sticky-stacking)
+
+> Una sección de **productos destacados que se superponen** uno sobre otro a
+> medida que deslizas hacia abajo.
+
+- **Componente:** `landing/StackingProducts.tsx`.
+- **Qué hace:** cada carta de producto queda **fijada (`sticky`) al tope del
+  viewport** y, conforme la siguiente entra por debajo, la anterior **se reduce de
+  escala** y queda detrás. El resultado es un mazo de cartas que se apilan y
+  superponen — el "momento scroll" característico del storefront.
+- **Cómo:** usa `useScroll` + `useTransform` de framer-motion para mapear el
+  progreso de scroll del contenedor a la escala de cada carta
+  (`targetScale = 1 − (n − 1 − i) · 0.04`), con un pequeño offset vertical por
+  índice para que asomen unas detrás de otras.
+- **Contenido por carta:** número (01, 02, …), categoría, nombre, imagen, precio,
+  descripción y una CTA configurable: `GradientPill` "Agregar" (`onAddToCart`),
+  botón "Ver" (`onNavigate`) o una acción propia vía `renderAction` (p. ej. enlace
+  a WhatsApp en el catálogo público).
+- **Datos:** en `CatalogoPage` se alimenta de `showcase` — los **5 productos con
+  stock más caros** con imagen, ordenados por precio.
+
+> **Nota:** el `HomePage` del marketplace (`pages/marketplace/HomePage.tsx`) usa
+> una variante interactiva relacionada, `landing/SwipeDeck.tsx` (mazo estilo Tinder:
+> desliza a la derecha para guardar en "intereses", a la izquierda para descartar).
+
+Ambas secciones degradan con elegancia: si no hay productos con imagen, el hero no
+renderiza el campo magnético y la sección de destacados se oculta.
+
+---
+
 ## Flujo de autenticación (multi-tienda)
 
 1. El login pide **tienda + email + contraseña**. La tienda se elige por nombre en un
