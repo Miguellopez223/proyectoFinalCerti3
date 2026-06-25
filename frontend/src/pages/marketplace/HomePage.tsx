@@ -6,6 +6,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { ProductoCard } from '@/components/marketplace/ProductoCard';
 import { ProductImage } from '@/components/ProductImage';
+import { KlikeaLogo } from '@/components/KlikeaLogo';
 import { FadeIn } from '@/components/landing/FadeIn';
 import { HeroProductField } from '@/components/landing/HeroProductField';
 import { GradientPill } from '@/components/landing/PillButton';
@@ -14,9 +15,6 @@ import { SwipeDeck } from '@/components/landing/SwipeDeck';
 import { GRUPOS_CATEGORIAS } from '@/lib/categoriaGrupos';
 import { formatCurrency } from '@/lib/format';
 import type { HomeData, Producto } from '@/types';
-
-/** Marca mostrada en el hero del marketplace. */
-const BRAND = 'Klikea';
 
 /** Clave de localStorage para recordar los intereses (deslizados a la derecha). */
 const INTERESES_KEY = 'klikea.intereses';
@@ -117,13 +115,14 @@ export default function HomePage() {
       <section className="relative mb-4 flex min-h-[82vh] flex-col">
         {heroPool.length > 0 && <HeroProductField products={heroPool} onSelect={goToProduct} />}
 
-        <FadeIn delay={0.15} y={40} className="pointer-events-none relative z-10 mt-[16vh] sm:mt-[20vh]">
-          <h1
-            className="hero-heading w-full whitespace-nowrap text-center font-black uppercase leading-none tracking-tight"
-            style={{ fontSize: 'clamp(2.5rem, 11vw, 9rem)' }}
+        <FadeIn delay={0.15} y={40} className="pointer-events-none relative z-10 mx-auto mt-[20vh] flex w-full flex-col items-center sm:mt-[24vh]">
+          <KlikeaLogo noBag className="mx-auto w-full max-w-2xl" />
+          <p
+            className="mt-3 text-center font-light uppercase text-[#e7a149]"
+            style={{ letterSpacing: '0.5em', fontSize: 'clamp(0.7rem, 1.5vw, 1.05rem)' }}
           >
-            {BRAND}
-          </h1>
+            Todo a un click
+          </p>
         </FadeIn>
 
         <div className="relative z-10 mt-auto flex items-end justify-between gap-4 pb-8 pt-10">

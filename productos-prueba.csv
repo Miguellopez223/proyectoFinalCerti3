@@ -1,0 +1,6 @@
+nombre,slugProducto,descripcionLarga,precio,precioOferta,stock,stockMinimo,imagenUrl
+Auriculares Bluetooth X200,auriculares-bluetooth-x200,"Auriculares inalámbricos con cancelación de ruido y 30h de batería.",189.00,149.00,25,5,https://picsum.photos/seed/auriculares/600/600
+Mochila Urbana Antirrobo,mochila-urbana-antirrobo,"Mochila resistente al agua con compartimento para laptop y puerto USB.",320.00,,15,3,https://picsum.photos/seed/mochila/600/600
+Botella Térmica 1L,botella-termica-1l,"Botella de acero inoxidable que mantiene la temperatura por 12 horas.",75.50,,40,8,https://picsum.photos/seed/botella/600/600
+Teclado Mecánico RGB,teclado-mecanico-rgb,"Teclado mecánico retroiluminado RGB con switches azules.",410.00,369.00,12,2,https://picsum.photos/seed/teclado/600/600
+Lámpara LED de Escritorio,lampara-led-escritorio,"Lámpara regulable con tres tonos de luz y carga inalámbrica.",130.00,,30,5,https://picsum.photos/seed/lampara/600/600
