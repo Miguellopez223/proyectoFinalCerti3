@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea, FieldWrapper } from '@/components/ui/Field';
@@ -6,10 +6,10 @@ import { ProductImage } from '@/components/ProductImage';
 import { productosApi } from '@/api/productos';
 import { categoriasApi } from '@/api/categorias';
 import { unidadesApi } from '@/api/unidades';
+import { uploadsApi } from '@/api/uploads';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage, getFieldErrors } from '@/lib/errors';
 import { slugify } from '@/lib/format';
-import { openCloudinaryUploadWidget, cloudinaryConfigured } from '@/lib/cloudinary';
 import type { Categoria, Producto, ProductoRequest, UnidadMedida } from '@/types';
 
 interface Props {
@@ -38,6 +38,7 @@ const emptyForm = {
 
 export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }: Props) {
   const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -90,18 +91,29 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
   }
 
   function handleSubirImagen() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleImagenSeleccionada(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecciona un archivo de imagen.');
+      return;
+    }
+
     setUploading(true);
-    openCloudinaryUploadWidget(
-      (url) => {
-        set('imagenUrl', url);
-        toast.success('Imagen subida.');
-      },
-      (message) => {
-        setUploading(false);
-        toast.error(message);
-      },
-      () => setUploading(false),
-    );
+    try {
+      const uploaded = await uploadsApi.subirImagen(file, 'productos');
+      set('imagenUrl', uploaded.url);
+      toast.success('Imagen subida.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setUploading(false);
+    }
   }
 
   function validate() {
@@ -198,11 +210,7 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
         />
         <FieldWrapper
           label="Imagen del producto"
-          hint={
-            cloudinaryConfigured
-              ? 'Subí un archivo (se aloja en Cloudinary) o pegá una URL.'
-              : 'Falta configurar Cloudinary; por ahora solo se puede pegar una URL.'
-          }
+          hint="Subi un archivo para guardarlo en S3 o pega una URL."
         >
           <div className="flex items-start gap-3">
             <ProductImage
@@ -211,6 +219,13 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
               className="h-20 w-20 shrink-0 rounded-lg border border-slate-200"
             />
             <div className="flex-1 space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleImagenSeleccionada}
+              />
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -218,7 +233,7 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
                   size="sm"
                   onClick={handleSubirImagen}
                   loading={uploading}
-                  disabled={!cloudinaryConfigured}
+                  disabled={uploading}
                 >
                   Subir imagen
                 </Button>
@@ -232,7 +247,7 @@ export function ProductoFormModal({ open, onClose, onSaved, tiendaId, producto }
                 className="input-base"
                 value={form.imagenUrl}
                 onChange={(e) => set('imagenUrl', e.target.value)}
-                placeholder="https://… (o subí un archivo)"
+                placeholder="https://... (o subi un archivo)"
               />
             </div>
           </div>

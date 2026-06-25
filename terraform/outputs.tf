@@ -17,3 +17,8 @@ output "rds_endpoint" {
   description = "PostgreSQL endpoint."
   value       = aws_db_instance.postgres.address
 }
+
+output "uploads_bucket" {
+  description = "S3 bucket used for admin-uploaded images."
+  value       = aws_s3_bucket.uploads.id
+}

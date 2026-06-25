@@ -116,6 +116,36 @@ resource "aws_s3_bucket" "artifacts" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket" "uploads" {
+  bucket        = "${local.name_prefix}-uploads"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_public_access_block" "uploads" {
+  bucket                  = aws_s3_bucket.uploads.id
+  block_public_acls       = true
+  ignore_public_acls      = true
+  block_public_policy     = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "uploads_public_read" {
+  bucket = aws_s3_bucket.uploads.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowPublicReadUploads"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.uploads.arn}/*"
+    }]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.uploads]
+}
+
 resource "aws_s3_object" "backend_jar" {
   bucket = aws_s3_bucket.artifacts.id
   key    = "backend/ecommerce-api-${local.backend_jar_hash}.jar"
@@ -141,6 +171,32 @@ resource "aws_iam_role" "beanstalk_ec2" {
 resource "aws_iam_role_policy_attachment" "beanstalk_web_tier" {
   role       = aws_iam_role.beanstalk_ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier"
+}
+
+resource "aws_iam_role_policy" "beanstalk_uploads" {
+  name = "${local.name_prefix}-uploads-policy"
+  role = aws_iam_role.beanstalk_ec2.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:AbortMultipartUpload"
+        ]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.uploads.arn
+      }
+    ]
+  })
 }
 
 resource "aws_iam_instance_profile" "beanstalk" {
@@ -255,6 +311,23 @@ resource "aws_elastic_beanstalk_environment" "api" {
     name      = "SPRING_QUARTZ_JDBC_INITIALIZE_SCHEMA"
     value     = var.quartz_initialize_schema
   }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "UPLOADS_S3_BUCKET"
+    value     = aws_s3_bucket.uploads.id
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "UPLOADS_PUBLIC_BASE_URL"
+    value     = "https://${aws_s3_bucket.uploads.bucket_regional_domain_name}"
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.beanstalk_web_tier,
+    aws_iam_role_policy.beanstalk_uploads
+  ]
 }
 
 resource "aws_s3_bucket" "frontend" {
