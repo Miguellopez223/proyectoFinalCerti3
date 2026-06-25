@@ -67,12 +67,21 @@ public class CarritoAbandonadoQuartzJob extends QuartzJobBean implements Interru
     @Value("${carrito.abandono.horas:1}")
     private long horasAbandono;
 
+    /**
+     * Override para pruebas: si es mayor a 0, el umbral de abandono se calcula en SEGUNDOS
+     * en vez de horas (más fácil de probar manualmente). En producción déjalo en 0.
+     */
+    @Value("${carrito.abandono.segundos:0}")
+    private long segundosAbandono;
+
     /** Lo activa {@link #interrupt()} para cortar el barrido de forma ordenada entre lotes. */
     private volatile boolean interrumpido = false;
 
     @Override
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
-        LocalDateTime limite = LocalDateTime.now().minusHours(horasAbandono);
+        LocalDateTime limite = segundosAbandono > 0
+                ? LocalDateTime.now().minusSeconds(segundosAbandono)
+                : LocalDateTime.now().minusHours(horasAbandono);
         log.info("[Quartz] Barrido de carritos abandonados: ACTIVO sin cambios desde antes de {}", limite);
 
         // Ordenamos por el más antiguo primero. Siempre leemos la página 0 porque, al marcar
