@@ -23,6 +23,22 @@ public class ReporteVentasResponse {
     private BigDecimal ticketPromedio;
     private BigDecimal margenPorcentaje;
 
+    // ── KPIs secundarios ─────────────────────────────────────────────────────
+    /** Total de unidades vendidas (Σ cantidad de los detalles). */
+    private long unidadesVendidas;
+    /** Promedio de unidades por venta (unidadesVendidas / totalVentas). */
+    private BigDecimal unidadesPorVenta;
+    /** Pedidos anulados (estado CANCELADO) en el período. */
+    private long ventasAnuladasCantidad;
+    /** Monto revertido por los pedidos anulados. */
+    private BigDecimal montoAnulado;
+
+    // ── Comparativa mensual (independiente del rango de fechas) ───────────────
+    private BigDecimal ingresosMesActual;
+    private BigDecimal ingresosMesAnterior;
+    /** Variación %: (mesActual - mesAnterior) / mesAnterior * 100. */
+    private BigDecimal variacionMensual;
+
     /** Desglose por método de pago (etiqueta = método, cantidad = nº pagos, ingresos = monto). */
     private List<SerieItemResponse> porMetodoPago;
 }

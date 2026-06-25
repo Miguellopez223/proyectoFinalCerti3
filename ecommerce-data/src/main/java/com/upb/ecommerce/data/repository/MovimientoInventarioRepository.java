@@ -41,4 +41,19 @@ public interface MovimientoInventarioRepository extends JpaRepository<Movimiento
                                        @Param("usuarioId") Long usuarioId,
                                        @Param("desde") LocalDateTime desde,
                                        @Param("hasta") LocalDateTime hasta);
+
+    /**
+     * Compras por proveedor en un rango: agrupa las ENTRADAS con proveedor no nulo. Filas
+     * [proveedor (String), numEntradas (Long), unidades (Long), costoTotal (BigDecimal)].
+     * El costo total ignora entradas sin precioUnitario (SUM omite nulos).
+     */
+    @Query("SELECT m.proveedor, COUNT(m), SUM(m.cantidad), SUM(m.cantidad * m.precioUnitario) " +
+            "FROM MovimientoInventario m WHERE m.tienda.id = :tiendaId AND m.tipo = 'ENTRADA' " +
+            "AND m.proveedor IS NOT NULL AND m.proveedor <> '' " +
+            "AND (:desde IS NULL OR m.fecha >= :desde) " +
+            "AND (:hasta IS NULL OR m.fecha <= :hasta) " +
+            "GROUP BY m.proveedor ORDER BY SUM(m.cantidad * m.precioUnitario) DESC")
+    List<Object[]> comprasPorProveedor(@Param("tiendaId") Long tiendaId,
+                                       @Param("desde") LocalDateTime desde,
+                                       @Param("hasta") LocalDateTime hasta);
 }

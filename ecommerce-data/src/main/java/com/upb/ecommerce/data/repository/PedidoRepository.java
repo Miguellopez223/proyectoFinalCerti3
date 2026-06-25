@@ -62,4 +62,40 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
                                            @Param("estados") List<String> estados,
                                            @Param("desde") LocalDateTime desde,
                                            @Param("hasta") LocalDateTime hasta);
+
+    /**
+     * Ranking histórico de productos más vendidos (sin filtro de fecha): filas
+     * [productoId (Long), nombre (String), unidades (Long), ingresos (BigDecimal)],
+     * ordenadas por unidades descendente. Usar {@code Pageable} para el top N.
+     */
+    @Query("SELECT d.producto.id, d.producto.nombre, SUM(d.cantidad), SUM(d.precioUnitario * d.cantidad) " +
+            "FROM DetallePedido d WHERE d.pedido.tienda.id = :tiendaId " +
+            "AND d.pedido.estadoPedido IN :estados " +
+            "GROUP BY d.producto.id, d.producto.nombre " +
+            "ORDER BY SUM(d.cantidad) DESC")
+    List<Object[]> topProductosHistorico(@Param("tiendaId") Long tiendaId,
+                                         @Param("estados") List<String> estados,
+                                         Pageable pageable);
+
+    /**
+     * Última compra (completada) por cliente, todo el historial: filas
+     * [usuarioId (Long), ultimaCompra (LocalDateTime)]. Usado para detectar clientes inactivos.
+     */
+    @Query("SELECT p.usuario.id, MAX(p.fechaCreacion) FROM Pedido p " +
+            "WHERE p.tienda.id = :tiendaId AND p.estadoPedido IN :estados " +
+            "GROUP BY p.usuario.id")
+    List<Object[]> ultimaCompraPorCliente(@Param("tiendaId") Long tiendaId,
+                                          @Param("estados") List<String> estados);
+
+    /**
+     * Compras (completadas) por cliente, todo el historial: filas
+     * [usuarioId (Long), nombre (String), email (String), telefono (String),
+     *  cantidadCompras (Long), totalGastado (BigDecimal), ultimaCompra (LocalDateTime)].
+     */
+    @Query("SELECT p.usuario.id, p.usuario.nombre, p.usuario.email, p.usuario.numeroWhatsapp, " +
+            "COUNT(p), COALESCE(SUM(p.total), 0), MAX(p.fechaCreacion) FROM Pedido p " +
+            "WHERE p.tienda.id = :tiendaId AND p.estadoPedido IN :estados " +
+            "GROUP BY p.usuario.id, p.usuario.nombre, p.usuario.email, p.usuario.numeroWhatsapp")
+    List<Object[]> comprasPorClienteHistorico(@Param("tiendaId") Long tiendaId,
+                                              @Param("estados") List<String> estados);
 }

@@ -15,6 +15,8 @@ public class ReporteAnaliticoResponse {
     private List<SerieItemResponse> ventasPorDia;
     private List<SerieItemResponse> ventasPorCategoria;
     private List<SerieItemResponse> ventasPorHora;
+    /** Heatmap por día de la semana (7 entradas, etiqueta Dom..Sáb). */
+    private List<SerieItemResponse> ventasPorDiaSemana;
 
     private BigDecimal ingresosSemanaActual;
     private BigDecimal ingresosSemanaAnterior;

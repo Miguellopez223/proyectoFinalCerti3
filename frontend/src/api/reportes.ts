@@ -1,9 +1,11 @@
 import { api } from './client';
 import type {
   MovimientoInventario,
+  ProveedorCompra,
   ReporteAnalitico,
-  ReporteCliente,
+  ReporteClientes,
   ReporteProductos,
+  ReporteRentabilidad,
   ReporteVentas,
 } from '@/types';
 
@@ -30,9 +32,21 @@ export const reportesApi = {
       })
       .then((r) => r.data),
 
-  clientes: (tiendaId: number, rango: RangoFechas = {}) =>
+  rentabilidad: (tiendaId: number, rango: RangoFechas = {}) =>
     api
-      .get<ReporteCliente[]>(`/api/reportes/tienda/${tiendaId}/clientes`, { params: rango })
+      .get<ReporteRentabilidad>(`/api/reportes/tienda/${tiendaId}/rentabilidad`, { params: rango })
+      .then((r) => r.data),
+
+  clientes: (tiendaId: number, rango: RangoFechas = {}, diasInactividad = 30) =>
+    api
+      .get<ReporteClientes>(`/api/reportes/tienda/${tiendaId}/clientes`, {
+        params: { ...rango, diasInactividad },
+      })
+      .then((r) => r.data),
+
+  proveedores: (tiendaId: number, rango: RangoFechas = {}) =>
+    api
+      .get<ProveedorCompra[]>(`/api/reportes/tienda/${tiendaId}/proveedores`, { params: rango })
       .then((r) => r.data),
 
   movimientos: (

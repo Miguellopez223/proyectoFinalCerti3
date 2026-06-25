@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -36,6 +37,20 @@ public class MovimientoInventario {
 
     @Column(columnDefinition = "TEXT")
     private String referencia; // Ej: "Venta pedido #PED-ABC123", "Ajuste manual de stock"
+
+    /**
+     * Proveedor al que se compró el stock. Solo relevante en movimientos de tipo ENTRADA;
+     * null en salidas, ajustes o filas importadas del .backup. Habilita el reporte de Proveedores.
+     */
+    @Column(length = 200)
+    private String proveedor;
+
+    /**
+     * Costo unitario de la compra (entrada). Nullable a propósito: salidas y filas viejas
+     * no lo tienen. Usado para valorizar las compras por proveedor.
+     */
+    @Column(name = "precio_unitario", precision = 10, scale = 2)
+    private BigDecimal precioUnitario;
 
     @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
