@@ -110,6 +110,10 @@ public class MarketplaceService {
         h.setMasBuscados(mapear(productoRepository.findRecientes(PageRequest.of(0, 10))));
         h.setOfertas(mapear(productoRepository.findOfertasVigentes(PageRequest.of(0, 10))));
         h.setDestacados(mapear(productoRepository.findDestacados(PageRequest.of(0, 10))));
+        // Novedades: los más nuevos (id DESC) para la sección "NUEVO".
+        h.setNovedades(mapear(productoRepository.findRecientes(PageRequest.of(0, 12))));
+        // Catálogo completo (todos los activos) para el deck "Descubrí deslizando".
+        h.setCatalogo(mapear(productoRepository.findRecientes(PageRequest.of(0, 500))));
         h.setTiendas(tiendaRepository.findByEstadoTrue().stream().map(TiendaResponse::fromEntity).toList());
         return h;
     }

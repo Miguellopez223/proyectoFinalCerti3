@@ -50,7 +50,7 @@ export function SwipeDeck({ products, onLike, onDismiss, renderEmpty }: SwipeDec
 
   return (
     <div className="mx-auto w-full max-w-md select-none">
-      <div className="relative mx-auto h-[440px] w-full sm:h-[520px]">
+      <div className="relative mx-auto h-[360px] w-full sm:h-[410px]">
         {remaining === 0
           ? (renderEmpty?.(reset) ?? <DeckEmpty reset={reset} />)
           : visible.map((p, i) => (
@@ -70,7 +70,7 @@ export function SwipeDeck({ products, onLike, onDismiss, renderEmpty }: SwipeDec
 
       {/* Controls + counter */}
       {remaining > 0 && (
-        <div className="mt-7 flex items-center justify-center gap-6">
+        <div className="mt-14 flex items-center justify-center gap-6 sm:mt-20">
           <button
             type="button"
             onClick={() => decideRef.current('nope')}

@@ -393,6 +393,10 @@ export interface HomeData {
   masBuscados: Producto[];
   ofertas: Producto[];
   destacados: Producto[];
+  /** Productos recién agregados (los más nuevos) — sección "NUEVO". */
+  novedades?: Producto[];
+  /** Catálogo completo (todos los productos activos) para el deck "Descubrí deslizando". */
+  catalogo?: Producto[];
   tiendas: Tienda[];
 }
 
