@@ -108,7 +108,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             LEFT JOIN p.categoria c
             WHERE p.estado = true
               AND p.tienda.estado = true
-              AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+              AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))
               AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
               AND (:precioMin IS NULL OR p.precio >= :precioMin)
               AND (:precioMax IS NULL OR p.precio <= :precioMax)

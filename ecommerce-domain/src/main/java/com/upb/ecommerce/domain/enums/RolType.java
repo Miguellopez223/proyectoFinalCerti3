@@ -7,5 +7,6 @@ package com.upb.ecommerce.domain.enums;
  */
 public enum RolType {
     ADMIN,
-    CLIENTE
+    CLIENTE,
+    ROOT
 }

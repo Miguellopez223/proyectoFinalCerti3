@@ -63,10 +63,6 @@ public class MarketplaceController {
         return ResponseEntity.ok(marketplaceService.buscarPaginado(nombre, categoriaId, precioMin, precioMax, enStock, pageable));
     }
 
-    /**
-     * Parsea el parámetro sort en formato "campo:dirección" (ej: "nombre:asc", "precio:desc").
-     * Soporta múltiples ordenamientos: "nombre:asc,precio:desc"
-     */
     private Sort.Order[] parseSort(String sortParam) {
         if (sortParam == null || sortParam.isEmpty()) {
             return new Sort.Order[]{Sort.Order.asc("nombre")};

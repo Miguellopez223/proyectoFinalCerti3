@@ -137,15 +137,6 @@ public class MarketplaceService {
         return mapear(rec);
     }
 
-    /**
-     * Búsqueda paginada de productos con filtros opcionales.
-     * Parámetros:
-     * - nombre: búsqueda en nombre del producto
-     * - categoriaId: filtrar por categoría
-     * - precioMin/precioMax: rango de precio
-     * - enStock: si true, solo productos con stock > 0
-     * - pageable: información de paginación (page, size, sort)
-     */
     @Transactional(readOnly = true)
     public Page<ProductoResponse> buscarPaginado(
             String nombre,

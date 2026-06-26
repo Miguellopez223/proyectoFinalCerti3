@@ -73,17 +73,6 @@ public class ProductoService {
                 .stream().map(ProductoResponse::fromEntity).toList();
     }
 
-    /**
-     * Busca productos activos con filtros opcionales y paginación.
-     * Parámetros:
-     * - nombre: búsqueda en nombre del producto (insensible a mayúsculas)
-     * - categoriaId: filtrar por categoría
-     * - precioMin: precio mínimo
-     * - precioMax: precio máximo
-     * - enStock: si true, solo productos con stock > 0
-     * - tiendaId: filtrar por tienda (opcional)
-     * - pageable: información de paginación (page, size, sort)
-     */
     @Transactional(readOnly = true)
     public Page<ProductoResponse> buscarConFiltros(
             String nombre,
