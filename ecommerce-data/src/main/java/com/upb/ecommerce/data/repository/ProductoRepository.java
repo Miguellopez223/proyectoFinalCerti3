@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,4 +93,36 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
             ORDER BY random() LIMIT :limit
             """, nativeQuery = true)
     List<Producto> recomendadosPorCategoria(@Param("id") Long id, @Param("limit") int limit);
+
+    /**
+     * Búsqueda paginada de productos activos con filtros opcionales.
+     * Parámetros de filtro:
+     * - nombre: búsqueda por nombre normalizado (sin tildes, insensible a mayúsculas)
+     * - categoriaId: filtrar por ID de categoría
+     * - precioMin/precioMax: rango de precio
+     * - enStock: si true, solo productos con stock > 0
+     * - tiendaId: filtrar por tienda (opcional)
+     */
+    @Query("""
+            SELECT p FROM Producto p
+            LEFT JOIN p.categoria c
+            WHERE p.estado = true
+              AND p.tienda.estado = true
+              AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+              AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
+              AND (:precioMin IS NULL OR p.precio >= :precioMin)
+              AND (:precioMax IS NULL OR p.precio <= :precioMax)
+              AND (:enStock = false OR p.stock > 0)
+              AND (:tiendaId IS NULL OR p.tienda.id = :tiendaId)
+            ORDER BY p.nombre ASC
+            """)
+    Page<Producto> buscarConFiltros(
+            @Param("nombre") String nombre,
+            @Param("categoriaId") Long categoriaId,
+            @Param("precioMin") BigDecimal precioMin,
+            @Param("precioMax") BigDecimal precioMax,
+            @Param("enStock") Boolean enStock,
+            @Param("tiendaId") Long tiendaId,
+            Pageable pageable
+    );
 }

@@ -7,9 +7,13 @@ import com.upb.ecommerce.core.dto.response.ProductoResponse;
 import com.upb.ecommerce.core.service.MarketplaceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -38,6 +42,45 @@ public class MarketplaceController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         return ResponseEntity.ok(marketplaceService.buscar(q, tiendaId, orden, page, size));
+    }
+
+    @Operation(summary = "Buscar productos con filtros opcionales y paginación",
+            description = "Devuelve productos activos paginados. Filtros opcionales: nombre, categoría, "
+                    + "rango de precio (precioMin/precioMax) y disponibilidad en stock. "
+                    + "Paginación: ?page=0&size=10&sort=nombre,asc")
+    @GetMapping("/productos")
+    public ResponseEntity<Page<ProductoResponse>> buscarPaginado(
+            @RequestParam(value = "nombre", required = false) String nombre,
+            @RequestParam(value = "categoriaId", required = false) Long categoriaId,
+            @RequestParam(value = "precioMin", required = false) BigDecimal precioMin,
+            @RequestParam(value = "precioMax", required = false) BigDecimal precioMax,
+            @RequestParam(value = "enStock", required = false) Boolean enStock,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "nombre:asc") String sort) {
+        Sort.Order[] orders = parseSort(sort);
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, Sort.by(orders));
+        return ResponseEntity.ok(marketplaceService.buscarPaginado(nombre, categoriaId, precioMin, precioMax, enStock, pageable));
+    }
+
+    /**
+     * Parsea el parámetro sort en formato "campo:dirección" (ej: "nombre:asc", "precio:desc").
+     * Soporta múltiples ordenamientos: "nombre:asc,precio:desc"
+     */
+    private Sort.Order[] parseSort(String sortParam) {
+        if (sortParam == null || sortParam.isEmpty()) {
+            return new Sort.Order[]{Sort.Order.asc("nombre")};
+        }
+        String[] sorts = sortParam.split(",");
+        Sort.Order[] orders = new Sort.Order[sorts.length];
+        for (int i = 0; i < sorts.length; i++) {
+            String[] parts = sorts[i].trim().split(":");
+            String field = parts[0].trim();
+            Sort.Direction direction = (parts.length > 1 && "desc".equalsIgnoreCase(parts[1].trim()))
+                    ? Sort.Direction.DESC : Sort.Direction.ASC;
+            orders[i] = new Sort.Order(direction, field);
+        }
+        return orders;
     }
 
     @Operation(summary = "Sugerencias del buscador (typeahead)")

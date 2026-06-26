@@ -10,10 +10,14 @@ import com.upb.ecommerce.core.exception.NotDataFoundException;
 import com.upb.ecommerce.data.repository.ProductoRepository;
 import com.upb.ecommerce.data.repository.TiendaRepository;
 import com.upb.ecommerce.domain.entities.Producto;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -131,6 +135,34 @@ public class MarketplaceService {
                     .toList();
         }
         return mapear(rec);
+    }
+
+    /**
+     * Búsqueda paginada de productos con filtros opcionales.
+     * Parámetros:
+     * - nombre: búsqueda en nombre del producto
+     * - categoriaId: filtrar por categoría
+     * - precioMin/precioMax: rango de precio
+     * - enStock: si true, solo productos con stock > 0
+     * - pageable: información de paginación (page, size, sort)
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoResponse> buscarPaginado(
+            String nombre,
+            Long categoriaId,
+            BigDecimal precioMin,
+            BigDecimal precioMax,
+            Boolean enStock,
+            Pageable pageable) {
+        return productoRepository.buscarConFiltros(
+                nombre,
+                categoriaId,
+                precioMin,
+                precioMax,
+                enStock != null && enStock,
+                null,
+                pageable
+        ).map(ProductoResponse::fromEntity);
     }
 
     // ─── helpers ────────────────────────────────────────────────────────────────

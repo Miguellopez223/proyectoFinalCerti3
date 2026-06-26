@@ -73,6 +73,37 @@ public class ProductoService {
                 .stream().map(ProductoResponse::fromEntity).toList();
     }
 
+    /**
+     * Busca productos activos con filtros opcionales y paginación.
+     * Parámetros:
+     * - nombre: búsqueda en nombre del producto (insensible a mayúsculas)
+     * - categoriaId: filtrar por categoría
+     * - precioMin: precio mínimo
+     * - precioMax: precio máximo
+     * - enStock: si true, solo productos con stock > 0
+     * - tiendaId: filtrar por tienda (opcional)
+     * - pageable: información de paginación (page, size, sort)
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoResponse> buscarConFiltros(
+            String nombre,
+            Long categoriaId,
+            BigDecimal precioMin,
+            BigDecimal precioMax,
+            Boolean enStock,
+            Long tiendaId,
+            Pageable pageable) {
+        return productoRepository.buscarConFiltros(
+                nombre,
+                categoriaId,
+                precioMin,
+                precioMax,
+                enStock != null && enStock,
+                tiendaId,
+                pageable
+        ).map(ProductoResponse::fromEntity);
+    }
+
     // Primero busca el producto en la cache "productos"; si no esta, va a la BD y guarda
     // el resultado. Clave compuesta tienda-producto: el productoId se valida contra la
     // tienda, asi que la clave debe incluir ambos para no servir un producto de otra tienda.
