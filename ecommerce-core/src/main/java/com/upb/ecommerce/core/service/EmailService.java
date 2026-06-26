@@ -4,6 +4,7 @@ import com.upb.ecommerce.core.config.MailContentBuilder;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,8 @@ public class EmailService {
 
     @Value("${mail.smtp.from-mail:}")
     private String remitente;
+    @Value("${mail.smtp.username:}")
+    private String smtpUsername;
     @Value("${app.url-frontend:http://localhost:5173}")
     private String urlFrontend;
     @Value("${app.tienda-nombre:Comercio1}")
@@ -34,12 +37,14 @@ public class EmailService {
         this.mailContentBuilder = mailContentBuilder;
     }
 
-    /**
-     * Envío genérico de un correo HTML a partir de la plantilla {@code email/notificacion}.
-     * Lanza una excepción si el envío falla (el llamador decide cómo manejarlo).
-     */
+
     public void enviarNotificacion(String destino, String asunto, String titulo, String saludo,
                                    String cuerpoHtml, String botonTexto, String botonUrl, String nota) {
+        if (smtpUsername == null || smtpUsername.isBlank()) {
+            String msg = "credenciales SMTP no configuradas (define MAIL_SMTP_USERNAME y MAIL_SMTP_PASSWORD)";
+            log.warn("Correo '{}' a {} NO enviado: {}", asunto, destino, msg);
+            throw new RuntimeException("No se pudo enviar el correo: " + msg);
+        }
         try {
             MimeMessage mime = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8"); // true = multipart (HTML)
@@ -52,6 +57,28 @@ public class EmailService {
                     tiendaNombre, titulo, saludo, cuerpoHtml, botonTexto, botonUrl, nota);
             helper.setText(html, true); // true = el cuerpo es HTML
             mailSender.send(mime);
+            log.info("Correo '{}' enviado a {}", asunto, destino);
+        } catch (Exception e) {
+            log.error("No se pudo enviar el correo '{}' a {}: {}", asunto, destino, e.getMessage());
+            throw new RuntimeException("No se pudo enviar el correo: " + e.getMessage(), e);
+        }
+    }
+
+
+    public void enviarTextoPlano(String destino, String asunto, String mensaje) {
+        if (smtpUsername == null || smtpUsername.isBlank()) {
+            log.warn("Correo '{}' a {} NO enviado: credenciales SMTP no configuradas", asunto, destino);
+            throw new RuntimeException("No se pudo enviar el correo: credenciales SMTP no configuradas");
+        }
+        try {
+            SimpleMailMessage correo = new SimpleMailMessage();
+            if (remitente != null && !remitente.isBlank()) {
+                correo.setFrom(remitente);
+            }
+            correo.setTo(destino);
+            correo.setSubject(asunto);
+            correo.setText(mensaje);
+            mailSender.send(correo);
             log.info("Correo '{}' enviado a {}", asunto, destino);
         } catch (Exception e) {
             log.error("No se pudo enviar el correo '{}' a {}: {}", asunto, destino, e.getMessage());

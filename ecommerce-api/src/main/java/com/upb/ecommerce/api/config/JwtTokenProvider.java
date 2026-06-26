@@ -70,7 +70,9 @@ public class JwtTokenProvider implements Serializable {
 
     public String resolveToken(String bearerToken) {
         if (bearerToken != null && bearerToken.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            return bearerToken.substring(7);
+
+            String token = bearerToken.substring(7).trim();
+            return token.isEmpty() ? null : token;
         }
         return null;
     }
@@ -112,7 +114,7 @@ public class JwtTokenProvider implements Serializable {
             log.warn("La sesión del usuario ha expirado");
             throw e;
         } catch (JwtException | IllegalArgumentException e) {
-            log.error("Error al validar el TOKEN", e);
+            log.warn("Token JWT inválido: {}", e.getMessage());
             throw new InvalidJwtAuthenticationException("Token JWT caducado o no válido.");
         }
     }

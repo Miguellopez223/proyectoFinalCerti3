@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Tag(name = "Productos", description = "Catálogo interno de productos por tienda (alta/baja/edición requiere rol ADMIN)")
@@ -52,6 +53,26 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listarPorTiendaPaginado(
                 tiendaId, PageRequest.of(page, size, Sort.by(sortDir, sortBy))));
     }
+
+    @Operation(summary = "Buscar productos filtros (paginado)",
+            description = "Todos los filtros son opcionales (query params) ")
+    @GetMapping("/buscar")
+    public ResponseEntity<Page<ProductoResponse>> buscar(
+            @RequestParam(required = false) Long tiendaId,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) BigDecimal precioMin,
+            @RequestParam(required = false) BigDecimal precioMax,
+            @RequestParam(required = false) Boolean estado,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
+            @RequestParam(value = "sortBy", defaultValue = "nombre") String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "ASC") Sort.Direction sortDir) {
+        return ResponseEntity.ok(productoService.buscarConFiltros(
+                tiendaId, categoriaId, nombre, precioMin, precioMax, estado,
+                PageRequest.of(page, size, Sort.by(sortDir, sortBy))));
+    }
+
 
     @Operation(summary = "Listar productos de una tienda por categoría")
     @GetMapping("/tienda/{tiendaId}/categoria/{categoriaId}")

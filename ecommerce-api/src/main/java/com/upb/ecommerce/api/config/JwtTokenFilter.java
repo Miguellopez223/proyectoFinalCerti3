@@ -58,7 +58,7 @@ public class JwtTokenFilter extends OncePerRequestFilter implements Serializable
                 writeUnauthorized(response);
 
             } catch (UsernameNotFoundException | ExpiredJwtException | InvalidJwtAuthenticationException e) {
-                log.error("Error validando JWT: {}", e.getMessage());
+                log.warn("JWT rechazado: {}", e.getMessage());
                 writeUnauthorized(response);
             }
 

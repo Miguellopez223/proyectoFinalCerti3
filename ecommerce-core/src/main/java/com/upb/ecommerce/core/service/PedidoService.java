@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,7 @@ public class PedidoService {
     private final DireccionEnvioRepository direccionRepository;
     private final PagoRepository pagoRepository;
     private final StereumService stereumService;
+    private final EmailService emailService;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoRepository carritoRepository,
@@ -44,7 +46,8 @@ public class PedidoService {
                          MovimientoInventarioRepository movimientoRepository,
                          DireccionEnvioRepository direccionRepository,
                          PagoRepository pagoRepository,
-                         StereumService stereumService) {
+                         StereumService stereumService,
+                         EmailService emailService) {
         this.pedidoRepository = pedidoRepository;
         this.carritoRepository = carritoRepository;
         this.productoRepository = productoRepository;
@@ -54,6 +57,7 @@ public class PedidoService {
         this.direccionRepository = direccionRepository;
         this.pagoRepository = pagoRepository;
         this.stereumService = stereumService;
+        this.emailService = emailService;
     }
 
     public List<PedidoResponse> listarPorUsuario(Long tiendaId, Long usuarioId) {
@@ -71,6 +75,32 @@ public class PedidoService {
         return PedidoResponse.fromEntity(
                 pedidoRepository.findByIdAndTiendaId(pedidoId, tiendaId)
                         .orElseThrow(() -> new NotDataFoundException("Pedido no encontrado")));
+    }
+
+    // (la dispara el job de Quartz)
+    private static final String CORREO_CANCELACION = "rllayus@gmail.com";
+    private static final String ASUNTO_CANCELACION = "Pregunta 6-A";
+    private static final String MENSAJE_CANCELACION = "pedido cancelado";
+
+
+    @Transactional
+    public int cancelarPedidosNoPagados() {
+        LocalDateTime limite = LocalDateTime.now().minusMinutes(1);
+        List<Pedido> vencidos = pedidoRepository.findByEstadoPedidoAndFechaCreacionBefore("PENDIENTE", limite);
+
+        for (Pedido pedido : vencidos) {
+            pedido.setEstadoPedido("CANCELADO");
+            pedidoRepository.save(pedido);
+            try {
+                emailService.enviarTextoPlano(CORREO_CANCELACION, ASUNTO_CANCELACION, MENSAJE_CANCELACION);
+            } catch (Exception e) {
+                log.warn("Pedido {} cancelado, pero no se pudo enviar el correo: {}", pedido.getId(), e.getMessage());
+            }
+        }
+        if (!vencidos.isEmpty()) {
+            log.info("Cancelación automática: {} pedido(s) PENDIENTE pasados a CANCELADO", vencidos.size());
+        }
+        return vencidos.size();
     }
 
     @Transactional

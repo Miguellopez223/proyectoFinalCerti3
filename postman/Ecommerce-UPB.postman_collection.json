@@ -1,0 +1,2503 @@
+{
+  "info": {
+    "_postman_id": "9c5920f7-02d8-4afc-b400-a9f1d1f11461",
+    "name": "Ecommerce UPB - API",
+    "description": "Coleccion completa del backend Ecommerce UPB (Spring Boot, puerto 8081).\n\nUSO RAPIDO:\n1. Arranca el backend.\n2. Ejecuta 'Autenticacion > Login (guarda token)'. El script guarda el JWT en la variable {{token}} de la coleccion.\n3. El resto de peticiones usan Bearer {{token}} automaticamente.\n\nVariables editables en la pestania Variables de la coleccion (baseUrl, tiendaId, usuarioId, productoId, etc.).\n\nLogin admin sembrado: admin@comercio1.com / Admin123**",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@comercio1.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123**"
+    },
+    {
+      "key": "tiendaId",
+      "value": "1"
+    },
+    {
+      "key": "usuarioId",
+      "value": "1"
+    },
+    {
+      "key": "productoId",
+      "value": "1"
+    },
+    {
+      "key": "categoriaId",
+      "value": "1"
+    },
+    {
+      "key": "carritoId",
+      "value": "1"
+    },
+    {
+      "key": "pedidoId",
+      "value": "1"
+    },
+    {
+      "key": "slug",
+      "value": "comercio1"
+    },
+    {
+      "key": "stereumAccountId",
+      "value": "efd8122f-5508-40ab-b149-ddfc873a8bc0"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticacion",
+      "item": [
+        {
+          "name": "Login (guarda token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth"
+              ]
+            },
+            "description": "Login con email+password. El script guarda automaticamente access_token en la variable {{token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"tienda_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.access_token) {",
+                  "    pm.collectionVariables.set('token', json.access_token);",
+                  "    console.log('OK: token guardado en {{token}}');",
+                  "} else {",
+                  "    console.log('No se encontro access_token en la respuesta');",
+                  "}",
+                  "pm.test('Status code 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con Google (guarda token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"PEGA_AQUI_EL_ID_TOKEN_DE_GOOGLE\",\n  \"tienda_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && json.access_token) {",
+                  "    pm.collectionVariables.set('token', json.access_token);",
+                  "    console.log('OK: token guardado en {{token}}');",
+                  "} else {",
+                  "    console.log('No se encontro access_token en la respuesta');",
+                  "}",
+                  "pm.test('Status code 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth sistema externo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/externo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "externo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usuario@externo.com\",\n  \"password\": \"secreto\",\n  \"tiendaId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (invalida token actual)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar por tienda (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar (publico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/registrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "registrar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Nuevo Cliente\",\n  \"email\": \"cliente@test.com\",\n  \"password\": \"Cliente123**\",\n  \"rol\": \"CLIENTE\",\n  \"numeroWhatsapp\": \"77700000\",\n  \"visibleCatalogo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Otro Admin\",\n  \"email\": \"admin2@test.com\",\n  \"password\": \"Admin123**\",\n  \"rol\": \"ADMIN\",\n  \"numeroWhatsapp\": \"77700001\",\n  \"visibleCatalogo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Cliente Editado\",\n  \"email\": \"cliente@test.com\",\n  \"password\": \"Cliente123**\",\n  \"rol\": \"CLIENTE\",\n  \"numeroWhatsapp\": \"77700099\",\n  \"visibleCatalogo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivar (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/{{usuarioId}}/reactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "{{usuarioId}}",
+                "reactivar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tiendas",
+      "item": [
+        {
+          "name": "Listar todas (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas/slug/{{slug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas",
+                "slug",
+                "{{slug}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear (publico)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mi Tienda\",\n  \"slug\": \"mi-tienda\",\n  \"descripcion\": \"Tienda de prueba\",\n  \"bannerUrl\": \"\",\n  \"telefonoContacto\": \"77711111\",\n  \"emailContacto\": \"tienda@test.com\",\n  \"logoUrl\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas",
+                "{{tiendaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mi Tienda Editada\",\n  \"slug\": \"mi-tienda\",\n  \"descripcion\": \"Actualizada\",\n  \"bannerUrl\": \"\",\n  \"telefonoContacto\": \"77711112\",\n  \"emailContacto\": \"tienda@test.com\",\n  \"logoUrl\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tiendas/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tiendas",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Listar por tienda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar por tienda (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/tienda/{{tiendaId}}/paginado?page=0&size=10&sortBy=nombre&sortDir=ASC",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "tienda",
+                "{{tiendaId}}",
+                "paginado"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "nombre"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "ASC"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar por categoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/tienda/{{tiendaId}}/categoria/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "tienda",
+                "{{tiendaId}}",
+                "categoria",
+                "{{categoriaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/tienda/{{tiendaId}}/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{productoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"categoriaId\": 1,\n  \"unidadMedidaId\": 1,\n  \"nombre\": \"Producto X\",\n  \"slugProducto\": \"producto-x\",\n  \"descripcionLarga\": \"Descripcion del producto\",\n  \"precio\": 99.9,\n  \"precioCosto\": 50.0,\n  \"precioOferta\": null,\n  \"ofertaInicio\": null,\n  \"ofertaFin\": null,\n  \"stock\": 100,\n  \"stockMinimo\": 5,\n  \"imagenUrl\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Importar CSV (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/importar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "importar"
+              ]
+            },
+            "description": "Multipart: selecciona un archivo CSV en el campo 'file'.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tiendaId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "{{productoId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"categoriaId\": 1,\n  \"unidadMedidaId\": 1,\n  \"nombre\": \"Producto X Editado\",\n  \"slugProducto\": \"producto-x\",\n  \"descripcionLarga\": \"Editado\",\n  \"precio\": 109.9,\n  \"precioCosto\": 55.0,\n  \"stock\": 80,\n  \"stockMinimo\": 5,\n  \"imagenUrl\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/productos/tienda/{{tiendaId}}/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "productos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{productoId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categorias",
+      "item": [
+        {
+          "name": "Listar por tienda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Bebidas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias",
+                "{{categoriaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Bebidas frias\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias/{{categoriaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias",
+                "{{categoriaId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Atributos de producto",
+      "item": [
+        {
+          "name": "Listar por producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/atributos/producto/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "atributos",
+                "producto",
+                "{{productoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/atributos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "atributos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"nombre\": \"Color\",\n  \"valor\": \"Rojo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/atributos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "atributos",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": 1,\n  \"nombre\": \"Color\",\n  \"valor\": \"Azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/atributos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "atributos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Unidades de medida",
+      "item": [
+        {
+          "name": "Listar por tienda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/unidades-medida/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "unidades-medida",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/unidades-medida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "unidades-medida"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Unidad\",\n  \"abreviatura\": \"u\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/unidades-medida/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "unidades-medida",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Kilogramo\",\n  \"abreviatura\": \"kg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/unidades-medida/tienda/{{tiendaId}}/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "unidades-medida",
+                "tienda",
+                "{{tiendaId}}",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        {
+          "name": "Listar por tienda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar por producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/producto/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "producto",
+                "{{productoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar movimiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"productoId\": 1,\n  \"usuarioId\": 1,\n  \"tipo\": \"ENTRADA\",\n  \"cantidad\": 10,\n  \"referencia\": \"Compra inicial\",\n  \"proveedor\": \"Proveedor SA\",\n  \"precioUnitario\": 50.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Carrito",
+      "item": [
+        {
+          "name": "Obtener carrito (tienda+usuario)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/tienda/{{tiendaId}}/usuario/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "tienda",
+                "{{tiendaId}}",
+                "usuario",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Carritos activos del usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/usuario/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "usuario",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/agregar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "agregar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"usuarioId\": 1,\n  \"productoId\": 1,\n  \"cantidad\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/{{carritoId}}/item/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "{{carritoId}}",
+                "item",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/{{carritoId}}/vaciar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "{{carritoId}}",
+                "vaciar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Barrer abandonados (manual)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/barrer-abandonados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "barrer-abandonados"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Direcciones de envio",
+      "item": [
+        {
+          "name": "Listar por usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/direcciones/usuario/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "direcciones",
+                "usuario",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/direcciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "direcciones",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/direcciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "direcciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": 1,\n  \"direccionCalle\": \"Av. Siempre Viva 123\",\n  \"ciudad\": \"Cochabamba\",\n  \"referencias\": \"Casa azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/direcciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "direcciones",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": 1,\n  \"direccionCalle\": \"Av. Siempre Viva 456\",\n  \"ciudad\": \"Cochabamba\",\n  \"referencias\": \"Puerta verde\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/direcciones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "direcciones",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Listar por usuario (en tienda)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/{{tiendaId}}/usuario/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "{{tiendaId}}",
+                "usuario",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar todos del usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/usuario/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "usuario",
+                "{{usuarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (todos los carritos)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/checkout/usuario/{{usuarioId}}?direccionId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "checkout",
+                "usuario",
+                "{{usuarioId}}"
+              ],
+              "query": [
+                {
+                  "key": "direccionId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/{{tiendaId}}/{{pedidoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{pedidoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear desde carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"usuarioId\": 1,\n  \"direccionId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar estado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/{{tiendaId}}/{{pedidoId}}/estado?estado=PAGADO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{pedidoId}}",
+                "estado"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "PAGADO"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/{{tiendaId}}/{{pedidoId}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{pedidoId}}",
+                "cancelar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generar QR de pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/{{tiendaId}}/{{pedidoId}}/qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "{{tiendaId}}",
+                "{{pedidoId}}",
+                "qr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"country\": \"BO\",\n  \"currency\": \"BOB\",\n  \"network\": \"CSL\",\n  \"documentNumber\": \"12345678\",\n  \"reservationValidityTime\": \"10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pagos",
+      "item": [
+        {
+          "name": "Listar por pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/pedido/{{pedidoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "pedido",
+                "{{pedidoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": 1,\n  \"metodo\": \"QR\",\n  \"transaccionPasarelaId\": \"\",\n  \"monto\": 99.9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar QR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/qr/TRANSACTION_ID/verificar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "qr",
+                "TRANSACTION_ID",
+                "verificar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Resumen por tienda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/tienda/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "tienda",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Analitico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/analitico?desde=2026-01-01&hasta=2026-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "analitico"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ventas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/ventas?desde=2026-01-01&hasta=2026-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/productos?desde=2026-01-01&hasta=2026-12-31&diasSinMovimiento=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "diasSinMovimiento",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rentabilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/rentabilidad?desde=2026-01-01&hasta=2026-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "rentabilidad"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/clientes?desde=2026-01-01&hasta=2026-12-31&diasInactividad=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                },
+                {
+                  "key": "diasInactividad",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Proveedores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/proveedores?desde=2026-01-01&hasta=2026-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "proveedores"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Movimientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/tienda/{{tiendaId}}/movimientos?tipo=ENTRADA&desde=2026-01-01&hasta=2026-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reportes",
+                "tienda",
+                "{{tiendaId}}",
+                "movimientos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "ENTRADA"
+                },
+                {
+                  "key": "desde",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catalogo publico",
+      "item": [
+        {
+          "name": "Catalogo por slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/{{slug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "{{slug}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Marketplace (publico)",
+      "item": [
+        {
+          "name": "Buscar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/buscar?q=camisa&orden=relevante&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "camisa"
+                },
+                {
+                  "key": "orden",
+                  "value": "relevante"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sugerencias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/sugerencias?q=cam&limit=6",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "sugerencias"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "cam"
+                },
+                {
+                  "key": "limit",
+                  "value": "6"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Producto por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/producto/{{productoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "producto",
+                "{{productoId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Categorias populares",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/categorias-populares?limit=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "categorias-populares"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "12"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/home",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "home"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recomendados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/marketplace/recomendados/{{productoId}}?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "recomendados",
+                "{{productoId}}"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Enviar correo de prueba (publico)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notificaciones/prueba?to={{adminEmail}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones",
+                "prueba"
+              ],
+              "query": [
+                {
+                  "key": "to",
+                  "value": "{{adminEmail}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Integracion sistema externo",
+      "item": [
+        {
+          "name": "Listar usuarios externos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/integracion/externo/usuarios/{{tiendaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integracion",
+                "externo",
+                "usuarios",
+                "{{tiendaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear usuario externo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integracion/externo/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integracion",
+                "externo",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"nombre\": \"Usuario Externo\",\n  \"email\": \"ext@test.com\",\n  \"password\": \"Pass123**\",\n  \"rol\": \"CLIENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar tiendas externas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/integracion/externo/tiendas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integracion",
+                "externo",
+                "tiendas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear tienda externa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integracion/externo/tiendas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integracion",
+                "externo",
+                "tiendas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tienda Externa\",\n  \"slug\": \"tienda-externa\",\n  \"telefonoContacto\": \"77700000\",\n  \"emailContacto\": \"ext@test.com\",\n  \"logoUrl\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear cargo Stereum",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integracion/stereum/cargo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integracion",
+                "stereum",
+                "cargo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account_id\": \"{{stereumAccountId}}\",\n  \"country\": \"BO\",\n  \"amount\": \"100\",\n  \"currency\": \"BOB\",\n  \"network\": \"CSL\",\n  \"idempotency_key\": \"key-001\",\n  \"charge_reason\": \"Pago de pedido\",\n  \"reservation_validity_time\": \"10\",\n  \"callback\": \"{{baseUrl}}/api/webhooks/stereum/outbound\",\n  \"customer\": {\n    \"name\": \"Cliente Test\",\n    \"documentNumber\": \"12345678\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Subir imagen",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploads/imagenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "uploads",
+                "imagenes"
+              ]
+            },
+            "description": "Multipart: selecciona una imagen en el campo 'file'.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "folder",
+                  "value": "productos",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks Stereum (publico)",
+      "item": [
+        {
+          "name": "Callback outbound",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/stereum/outbound",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "stereum",
+                "outbound"
+              ]
+            },
+            "description": "Stereum llama este endpoint. Aqui es solo para simular el callback.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TX123\",\n  \"status\": \"PAID\",\n  \"username\": \"bisa.callback.test\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -68,14 +68,22 @@ public class ProductoService {
                 .map(ProductoResponse::fromEntity);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ProductoResponse> buscarConFiltros(Long tiendaId, Long categoriaId, String nombre,
+                                                   BigDecimal precioMin, BigDecimal precioMax,
+                                                   Boolean estado, Pageable pageable) {
+        String nombreFiltro = StringUtils.hasText(nombre) ? nombre.trim() : null;
+        return productoRepository.buscarConFiltros(tiendaId, categoriaId, nombreFiltro,
+                        precioMin, precioMax, estado, pageable)
+                .map(ProductoResponse::fromEntity);
+    }
+
     public List<ProductoResponse> listarPorCategoria(Long tiendaId, Long categoriaId) {
         return productoRepository.findByTiendaIdAndCategoriaIdAndEstadoTrue(tiendaId, categoriaId)
                 .stream().map(ProductoResponse::fromEntity).toList();
     }
 
-    // Primero busca el producto en la cache "productos"; si no esta, va a la BD y guarda
-    // el resultado. Clave compuesta tienda-producto: el productoId se valida contra la
-    // tienda, asi que la clave debe incluir ambos para no servir un producto de otra tienda.
+
     @Cacheable(value = "productos", key = "#tiendaId + '-' + #productoId")
     public ProductoResponse obtenerPorId(Long tiendaId, Long productoId) {
         return ProductoResponse.fromEntity(

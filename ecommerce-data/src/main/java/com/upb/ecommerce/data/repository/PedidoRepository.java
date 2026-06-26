@@ -22,6 +22,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     Optional<Pedido> findByIdAndTiendaId(Long id, Long tiendaId);
 
+
+    List<Pedido> findByEstadoPedidoAndFechaCreacionBefore(String estadoPedido, LocalDateTime limite);
+
     /** Pedidos "completados" (estado en la lista) dentro de un rango de fechas. */
     @Query("SELECT p FROM Pedido p WHERE p.tienda.id = :tiendaId " +
             "AND p.estadoPedido IN :estados " +

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,9 +35,27 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
            "AND p.stock <= p.stockMinimo ORDER BY p.stock ASC")
     List<Producto> findStockCritico(@Param("tiendaId") Long tiendaId);
 
-    // ─── Marketplace (cross-store) ──────────────────────────────────────────────
-    // Usa la función SQL kilikea_norm() (creada por MarketplaceDbInitializer) para
-    // comparar sin distinguir mayúsculas/minúsculas ni tildes, por coincidencia parcial.
+
+
+    @Query("""
+            SELECT p FROM Producto p
+            LEFT JOIN p.categoria c
+            WHERE (:tiendaId    IS NULL OR p.tienda.id = :tiendaId)
+              AND (:categoriaId IS NULL OR c.id = :categoriaId)
+              AND (:nombre      IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+              AND (:precioMin   IS NULL OR p.precio >= :precioMin)
+              AND (:precioMax   IS NULL OR p.precio <= :precioMax)
+              AND (:estado      IS NULL OR p.estado = :estado)
+            """)
+    Page<Producto> buscarConFiltros(@Param("tiendaId") Long tiendaId,
+                                    @Param("categoriaId") Long categoriaId,
+                                    @Param("nombre") String nombre,
+                                    @Param("precioMin") BigDecimal precioMin,
+                                    @Param("precioMax") BigDecimal precioMax,
+                                    @Param("estado") Boolean estado,
+                                    Pageable pageable);
+
+
 
     /** Productos activos (de tiendas activas) que coinciden con el término en nombre de producto, categoría o tienda. */
     @Query(value = """

@@ -2,6 +2,7 @@ package com.upb.ecommerce.api;
 
 import com.upb.ecommerce.api.job.CarritoAbandonadoQuartzJob;
 import com.upb.ecommerce.api.job.NotificacionJob;
+import com.upb.ecommerce.api.job.PedidoVencidoQuartzJob;
 import com.upb.ecommerce.api.quartz.service.JobDto;
 import com.upb.ecommerce.api.quartz.service.JobService;
 import com.upb.ecommerce.api.quartz.service.JobUtil;
@@ -13,13 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
-/**
- * Registra los jobs de Quartz al arrancar la aplicación (equivalente a la parte de jobs del
- * {@code DataInitializer} del docente). Va en el módulo {@code ecommerce-api} porque depende del
- * {@link JobService}; el {@code DataSeeder} del módulo {@code data} se deja intacto.
- *
- * <p>{@code @Order(2)} para ejecutarse después del {@code DataSeeder} ({@code @Order(1)}).
- */
+
 @Slf4j
 @Component
 @Order(2)
@@ -36,6 +31,10 @@ public class QuartzJobInitializer implements CommandLineRunner {
     @Value("${job.carrito-abandonado.cron:0 0 0/8 * * ?}")
     private String cronCarritoAbandonado;
 
+    // Cada 5
+    @Value("${job.pedido-vencido.cron:0/5 * * * * ?}")
+    private String cronPedidoVencido;
+
     public QuartzJobInitializer(JobService jobService) {
         this.jobService = jobService;
     }
@@ -49,6 +48,10 @@ public class QuartzJobInitializer implements CommandLineRunner {
         // Barrido de carritos abandonados (migrado de @Scheduled a Quartz)
         registrarJob(CarritoAbandonadoQuartzJob.getJobDto(JobUtil.GROUP_NAME), cronCarritoAbandonado,
                 "Barrido de carritos abandonados: envía recordatorios y marca los carritos como ABANDONADO");
+
+        // Cancelación automática de pedidos no pagados
+        registrarJob(PedidoVencidoQuartzJob.getJobDto(JobUtil.GROUP_NAME), cronPedidoVencido,
+                "Cancela pedidos PENDIENTE de más de 1 minuto y envía corre para que le de un aviso");
     }
 
     /** Programa el job como cron solo si no estaba ya registrado (idempotente entre reinicios). */
