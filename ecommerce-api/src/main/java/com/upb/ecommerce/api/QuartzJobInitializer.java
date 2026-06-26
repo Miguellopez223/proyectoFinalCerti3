@@ -1,5 +1,6 @@
 package com.upb.ecommerce.api;
 
+import com.upb.ecommerce.api.job.CancelarPedidosJob;
 import com.upb.ecommerce.api.job.CarritoAbandonadoQuartzJob;
 import com.upb.ecommerce.api.job.NotificacionJob;
 import com.upb.ecommerce.api.quartz.service.JobDto;
@@ -36,6 +37,10 @@ public class QuartzJobInitializer implements CommandLineRunner {
     @Value("${job.carrito-abandonado.cron:0 0 0/8 * * ?}")
     private String cronCarritoAbandonado;
 
+    // --- PREGUNTA 6-A --- cron "0/5 * * * * ?" = cada 5 segundos
+    @Value("${job.cancelar-pedidos.cron:0/5 * * * * ?}")
+    private String cronCancelarPedidos;
+
     public QuartzJobInitializer(JobService jobService) {
         this.jobService = jobService;
     }
@@ -49,6 +54,10 @@ public class QuartzJobInitializer implements CommandLineRunner {
         // Barrido de carritos abandonados (migrado de @Scheduled a Quartz)
         registrarJob(CarritoAbandonadoQuartzJob.getJobDto(JobUtil.GROUP_NAME), cronCarritoAbandonado,
                 "Barrido de carritos abandonados: envía recordatorios y marca los carritos como ABANDONADO");
+
+        // --- PREGUNTA 6-A --- Cancelacion automatica de pedidos no pagados (cada 5 segundos)
+        registrarJob(CancelarPedidosJob.getJobDto(JobUtil.GROUP_NAME), cronCancelarPedidos,
+                "Cancela los pedidos PENDIENTE que superan 1 minuto sin pago y envia un correo");
     }
 
     /** Programa el job como cron solo si no estaba ya registrado (idempotente entre reinicios). */

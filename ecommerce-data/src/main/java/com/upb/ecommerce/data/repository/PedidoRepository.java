@@ -17,6 +17,11 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByUsuarioIdAndTiendaId(Long usuarioId, Long tiendaId);
 
+    // --- PREGUNTA 6 ---
+    // Pedidos en un estado dado (ej: "PENDIENTE") creados ANTES de cierta fecha limite.
+    // Lo usa el job que cancela pedidos no pagados que ya superaron el minuto.
+    List<Pedido> findByEstadoPedidoAndFechaCreacionBefore(String estadoPedido, LocalDateTime limite);
+
     /** Todos los pedidos del usuario (todas las tiendas), más recientes primero. */
     List<Pedido> findByUsuarioIdOrderByIdDesc(Long usuarioId);
 

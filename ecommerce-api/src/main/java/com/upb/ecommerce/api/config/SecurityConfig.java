@@ -57,6 +57,8 @@ public class SecurityConfig implements Serializable {
                         .requestMatchers(HttpMethod.GET, "/api/catalogo/**").permitAll()
                         // Marketplace publico: busqueda, categorias populares, home, recomendados
                         .requestMatchers(HttpMethod.GET, "/api/marketplace/**").permitAll()
+                        //  -- PREGUNTA 5 --- Listado simple paginado de productos (GET /api/v1/productos)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/productos").permitAll()
                         // Webhook de Stereum: público porque Stereum no envía JWT;
                         // se autentica con la firma HMAC validada en el controlador.
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/stereum/outbound").permitAll()

@@ -4,6 +4,7 @@ import com.upb.ecommerce.core.dto.request.ProductoRequest;
 import com.upb.ecommerce.core.dto.response.ProductoImportError;
 import com.upb.ecommerce.core.dto.response.ProductoImportResponse;
 import com.upb.ecommerce.core.dto.response.ProductoResponse;
+import com.upb.ecommerce.core.dto.response.ProductoSimpleResponse;
 import com.upb.ecommerce.core.exception.NotDataFoundException;
 import com.upb.ecommerce.core.exception.OperationException;
 import com.upb.ecommerce.data.repository.CategoriaRepository;
@@ -66,6 +67,22 @@ public class ProductoService {
     public Page<ProductoResponse> listarPorTiendaPaginado(Long tiendaId, Pageable pageable) {
         return productoRepository.findByTiendaIdAndEstadoTrue(tiendaId, pageable)
                 .map(ProductoResponse::fromEntity);
+    }
+
+    // --- PREGUNTA 5 ---
+    // Listado simple paginado con filtro OPCIONAL por nombre
+    // - Si mandan un nombre -> busco solo los que lo contengan
+    // - Si NO  mandan nombre -> devuelve todos
+    // Al final convierte cada Producto a su DTO simple con .map(...).
+    @Transactional(readOnly = true)
+    public Page<ProductoSimpleResponse> listarSimple(String nombre, Pageable pageable) {
+        Page<Producto> productos;
+        if (nombre != null && !nombre.isEmpty()) {
+            productos = productoRepository.findByEstadoTrueAndNombreContainingIgnoreCase(nombre, pageable);
+        } else {
+            productos = productoRepository.findByEstadoTrue(pageable);
+        }
+        return productos.map(ProductoSimpleResponse::desde);
     }
 
     public List<ProductoResponse> listarPorCategoria(Long tiendaId, Long categoriaId) {

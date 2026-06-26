@@ -29,6 +29,11 @@
       "key": "stereumApiKey",
       "value": "98ca7eb3-7ce4-4bcb-8785-21dd15de4477",
       "type": "string"
+    },
+    {
+      "key": "pedidoExamenId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -2378,6 +2383,255 @@
               ]
             },
             "description": "Evicta todas las entradas de todas las caches."
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - Examen (Preguntas 5 y 6)",
+      "description": "Pruebas de las dos preguntas del examen.\n\nPREGUNTA 5: GET /api/v1/productos -> listado paginado, con filtro opcional por nombre, devolviendo un DTO simple (id, nombre, precio, stock). Es PUBLICO (sin token).\n\nPREGUNTA 6-A: job de Quartz que cada 5 segundos cancela los pedidos PENDIENTE (no pagados) que ya superaron 1 minuto de creados, y manda un correo a rllayus@gmail.com (asunto 'Pregunta 6-A', mensaje 'Pedido cancelado'). Para probarlo: crea un pedido y NO lo pagues; espera ~1 minuto y vuelve a consultar su estado: estara en CANCELADO.",
+      "item": [
+        {
+          "name": "P5 - Listar productos (todos, paginado)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ]
+            },
+            "description": "Sin parametros: primera pagina (page=0, size=10) de todos los productos activos. Devuelve un Page con content[] (cada item: id, nombre, precio, stock), totalElements, totalPages, number, size, etc."
+          }
+        },
+        {
+          "name": "P5 - Filtrar por nombre",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?nombre=smart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "smart",
+                  "description": "Filtro OPCIONAL. Trae los productos cuyo nombre CONTENGA este texto (sin importar mayusculas)."
+                }
+              ]
+            },
+            "description": "Filtro opcional por nombre. Cambia 'smart' por cualquier texto. Si lo quitas, devuelve todos."
+          }
+        },
+        {
+          "name": "P5 - Paginacion (page y size)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?page=0&size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Numero de pagina (empieza en 0)."
+                },
+                {
+                  "key": "size",
+                  "value": "5",
+                  "description": "Cantidad de elementos por pagina."
+                }
+              ]
+            },
+            "description": "Demuestra la paginacion: pagina 0 con 5 productos. Sube page a 1, 2, ... para ver las siguientes."
+          }
+        },
+        {
+          "name": "P5 - Filtro + paginacion juntos",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/productos?nombre=a&page=0&size=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "a",
+                  "description": "Filtro por nombre (contiene 'a')."
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Combina el filtro por nombre con la paginacion en una sola URL."
+          }
+        },
+        {
+          "name": "P6 - (Paso 1) Agregar item al carrito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"usuarioId\": 2,\n  \"productoId\": 1,\n  \"cantidad\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/agregar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "agregar"
+              ]
+            },
+            "description": "Paso 1 de la prueba de cancelacion: pon un producto en el carrito para poder crear un pedido. Requiere haber hecho Login antes (00 - Auth)."
+          }
+        },
+        {
+          "name": "P6 - (Paso 2) Crear pedido (queda PENDIENTE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda el id del pedido recien creado en {{pedidoExamenId}} para consultarlo luego.",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.collectionVariables.set('pedidoExamenId', json.id);",
+                  "    console.log('Pedido creado id =', json.id, '-> espera 1 minuto y consulta su estado');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiendaId\": 1,\n  \"usuarioId\": 2,\n  \"direccionId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "description": "Paso 2: crea el pedido desde el carrito. Nace en estado PENDIENTE (no pagado). NO lo pagues. Guarda su id en {{pedidoExamenId}}. A partir de aqui empieza a correr el minuto."
+          }
+        },
+        {
+          "name": "P6 - (Paso 3) Ver estado del pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/tienda/1/{{pedidoExamenId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "tienda",
+                "1",
+                "{{pedidoExamenId}}"
+              ]
+            },
+            "description": "Paso 3: consulta el pedido creado en el Paso 2. ANTES del minuto estara en PENDIENTE; DESPUES de 1 minuto (en el siguiente disparo del job, max 5s) estara en CANCELADO y habra salido el correo a rllayus@gmail.com. Repite este request hasta verlo CANCELADO."
+          }
+        },
+        {
+          "name": "P6 - (Opcional) Ver jobs de Quartz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/quartz/jobs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "quartz",
+                "jobs"
+              ]
+            },
+            "description": "Comprobacion: confirma que el job 'CancelarPedidosJob' (grupo Ecommerce) esta registrado en Quartz junto a los demas."
           }
         }
       ]

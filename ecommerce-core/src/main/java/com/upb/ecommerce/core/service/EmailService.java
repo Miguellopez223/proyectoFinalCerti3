@@ -4,6 +4,7 @@ import com.upb.ecommerce.core.config.MailContentBuilder;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,20 @@ public class EmailService {
             log.error("No se pudo enviar el correo '{}' a {}: {}", asunto, destino, e.getMessage());
             throw new RuntimeException("No se pudo enviar el correo: " + e.getMessage(), e);
         }
+    }
+
+    // --- PREGUNTA 6 ---
+    // Lo usa el job que cancela pedidos: asunto "Pregunta 6-A", mensaje "Pedido cancelado".
+    public void enviarCorreoSimple(String destino, String asunto, String mensaje) {
+        SimpleMailMessage correo = new SimpleMailMessage();
+        if (remitente != null && !remitente.isBlank()) {
+            correo.setFrom(remitente);
+        }
+        correo.setTo(destino);
+        correo.setSubject(asunto);
+        correo.setText(mensaje);
+        mailSender.send(correo);
+        log.info("Correo simple '{}' enviado a {}", asunto, destino);
     }
 
     /** Recordatorio al cliente de que dejó productos en su carrito (ahora en HTML). */

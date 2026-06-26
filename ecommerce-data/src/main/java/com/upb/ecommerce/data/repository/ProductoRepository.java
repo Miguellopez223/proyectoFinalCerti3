@@ -18,6 +18,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByTiendaIdAndEstadoTrue(Long tiendaId, Pageable pageable);
 
+    // --- PREGUNTA 5 ---
+    // Para el endpoint simple GET /api/v1/productos
+    // 1) Trae TODOS los productos activos, de a paginas.
+    Page<Producto> findByEstadoTrue(Pageable pageable);
+
+    // 2) Trae los productos activos cuyo nombre CONTENGA el texto buscado
+    Page<Producto> findByEstadoTrueAndNombreContainingIgnoreCase(String nombre, Pageable pageable);
+
     List<Producto> findByTiendaIdAndCategoriaIdAndEstadoTrue(Long tiendaId, Long categoriaId);
 
     Optional<Producto> findByIdAndTiendaId(Long id, Long tiendaId);
